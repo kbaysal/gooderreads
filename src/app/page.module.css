@@ -28,7 +28,7 @@
 
 .bookResults {
   display: grid;
-  grid-template-columns: min-content auto;
+  grid-template-columns: min-content auto min-content;
   width: 100%;
   row-gap: 32px;
   font-size: 10px;
@@ -65,4 +65,10 @@
   gap: 8px;
   margin-top: 20px;
   color: rgb(80, 70, 70);
+}
+
+.buttons {
+  align-self: center;
+  display: flex;
+  gap: 8px;
 }

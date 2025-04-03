@@ -2,16 +2,19 @@
 
 import { KeyboardEvent, useState } from "react";
 import styles from "./page.module.css";
-import { Input } from 'antd';
+import { Button, Input, Tooltip } from 'antd';
+import {IconBook, IconBook2, IconBookmark, IconTag, IconVocabularyOff} from "@tabler/icons-react";
+import Image from "next/image";
 
-const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?maxResults=20&printType=books&q=intitle:";
-const openLibraryURL = "https://openlibrary.org/search.json?q="
+const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?maxResults=20&printType=books&q=";
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>([]);
 
   const onEnter = (e: KeyboardEvent<HTMLInputElement>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log((e.target as any).value);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     fetch(`${googleURLForTitle}"${encodeURI((e.target as any).value)}"`).then(
       async (response) => {
         const result: BookResponse = await response.json();
@@ -21,16 +24,8 @@ export default function Home() {
           setBooks(result.items);
         }
       }
-    )
-
-    fetch(`${openLibraryURL}${encodeURI((e.target as any).value)}`).then(
-      async (response) => {
-        const result: BookResponse = await response.json();
-        console.log("other");
-        console.log(result);
-      }
-    )
-  };
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -50,7 +45,10 @@ const BookRow = (props: {book: Book}) => {
   const bookInfo = props.book.volumeInfo;
   return (
     <>
-      <img className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail} />
+      <Image 
+        className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail} 
+        alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
+      />
       <div>
         <div className={styles.bookTitle}>{bookInfo.title}</div>
         <div className={styles.author}>{bookInfo.authors?.join(", ")}</div>
@@ -60,6 +58,23 @@ const BookRow = (props: {book: Book}) => {
           <span>{bookInfo.publisher}</span>
           <span>{props.book.saleInfo.country}</span>
         </div>
+      </div>
+      <div className={styles.buttons}>
+        <Tooltip title="TBR">
+          <Button icon={<IconBookmark />} />
+        </Tooltip>
+        <Tooltip title="Reading">
+          <Button icon={<IconBook />} />
+        </Tooltip>
+        <Tooltip title="Read">
+          <Button icon={<IconBook2 />} />
+        </Tooltip>
+        <Tooltip title="DNF">
+          <Button icon={<IconVocabularyOff />} />
+        </Tooltip>
+        <Tooltip title="Tag">
+          <Button icon={<IconTag />} />
+        </Tooltip>
       </div>
     </>
   )
