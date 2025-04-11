@@ -72,3 +72,16 @@
   display: flex;
   gap: 8px;
 }
+
+.shelfButtons {
+  position: relative;
+}
+
+.formats {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: max-content max-content max-content;
+  gap: 4px;
+  position: absolute;
+  transform: translateX(-24px);
+}
