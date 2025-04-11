@@ -1,0 +1,54 @@
+.mediumText {
+    font-size: 16px;
+}
+
+:global(.ant-modal-header) {
+    font-size: 20px;
+}
+
+:global(.ant-modal-body) {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    margin-top: 32px;
+}
+
+:global(.ant-modal-body) > div {
+    display: flex;
+    align-items: center;
+}
+
+:global(.ant-modal-body) > div > *:not(svg) {
+    margin-left: 12px;
+}
+
+.formatButtons {
+    border-radius: 8px;
+}
+
+.formatButtons > button:nth-child(1) {
+    border-radius: 8px 0 0 8px;
+    border: solid #eb2f96;
+    border-width: 1px 0 1px 1px;
+
+}
+.formatButtons > button:nth-child(2) {
+    border-radius: 0;
+    border: solid #13c2c2;
+    border-width: 1px 1px 1px 1px;
+}
+.formatButtons > button:nth-child(3) {
+    border-radius: 0 8px 8px 0;
+    border: solid #722ed1;
+    border-width: 1px 1px 1px 0;
+}
+
+:global(.ant-modal-body) .rating span  {
+    margin-left: 6px;
+    margin-right: 2px;
+}
+
+.diversityCheckboxes {
+    display: flex;
+    flex-direction: column;
+}

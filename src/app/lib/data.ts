@@ -4,9 +4,31 @@ import { neon } from '@neondatabase/serverless';
 import { bookEntry, Format, Shelf } from './helper';
 
 export interface firstLookup {
+    id: number;
     bookid: string;
     formats: Format[];
-    shelf: string
+    shelf: Shelf;
+}
+
+export interface BookData {
+    id: number;
+    userid: number;
+    bookid: string;
+    startdate: Date;
+    enddate: Date;
+    formats: Format[];
+    rating: number;
+    spice: number;
+    sources: string[];
+    diverse: boolean;
+    bipoc: boolean;
+    lgbt: boolean;
+    diversity: string[];
+    labels: string[];
+    owned: number;
+    arc: string[];
+    country: string[];
+    genre: string[];
 }
 
 export async function existsOnShelf(bookIds: string[], userId: number): Promise<firstLookup[]> {
@@ -15,7 +37,7 @@ export async function existsOnShelf(bookIds: string[], userId: number): Promise<
         WITH input_bookids(bookid) AS (
             VALUES ('${bookIds.join("'),('")}')),
         matched_books AS (
-            SELECT b.id AS book_id_int, b.bookid, b.formats
+            SELECT b.id AS id, b.bookid, b.formats
             FROM books b
             INNER JOIN input_bookids i ON i.bookid = b.bookid
         ),
@@ -23,11 +45,12 @@ export async function existsOnShelf(bookIds: string[], userId: number): Promise<
         SELECT 
             m.bookid,
             m.formats,
+            m.id,
             CASE
-            WHEN m.book_id_int = ANY((u.shelves).TBR) THEN 'TBR'
-            WHEN m.book_id_int = ANY((u.shelves).READING) THEN 'READING'
-            WHEN m.book_id_int = ANY((u.shelves).READ) THEN 'READ'
-            WHEN m.book_id_int = ANY((u.shelves).DNF) THEN 'DNF'
+                WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
+                WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
+                WHEN m.id = ANY((u.shelves).READ) THEN 'READ'
+                WHEN m.id = ANY((u.shelves).DNF) THEN 'DNF'
             ELSE NULL
             END AS shelf
         FROM matched_books m
@@ -44,13 +67,16 @@ export async function existsOnShelf(bookIds: string[], userId: number): Promise<
     return response as firstLookup[];
 }
 
-export async function addToShelf(shelf: string, bookId: string, userId: number): Promise<boolean> {
+export async function addToShelf(shelf: string, id: number, bookId: string, userId: number, startdate?: string, enddate?: string): Promise<number | null> {
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
     try {
-        const idFromBooksResults = await sql.query(bookEntry(userId, bookId));
-        const idFromBooks = idFromBooksResults[0]?.id;
+        let idFromBooks = id;
+        if(!idFromBooks) {
+            const idFromBooksResults = await sql.query(bookEntry(userId, bookId));
+            idFromBooks = idFromBooksResults[0]?.id;
+        }
         const query = `UPDATE bookUsers
             SET shelves = ROW(
                 (shelves).TBR${shelf === Shelf.TBR ? ` || ${idFromBooks}` : ""},
@@ -60,33 +86,40 @@ export async function addToShelf(shelf: string, bookId: string, userId: number):
             )::shelvesType
             WHERE id = ${userId} AND NOT (${idFromBooks} = ANY((shelves).${shelf}));
             `;
-            console.log("############", idFromBooksResults, query);
+        console.log("############", idFromBooks, query);
 
         const response = await sql.query(query);
 
+        if (startdate || enddate) {
+            await sql.query(
+                `UPDATE books
+                SET ${startdate ? "startdate" : "enddate"} = '${startdate || enddate}'
+                WHERE id = ${idFromBooks};
+                `
+            );
+        }
+
         console.log(response);
-        return true;
+        return idFromBooks;
     } catch (e) {
         console.log(e);
-        return false;
+        return null;
     }
 };
 
 
-export async function removeFromShelf(shelf: string, bookId: string, userId: number): Promise<boolean> {
+export async function removeFromShelf(shelf: string, id: number, userId: number): Promise<boolean> {
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
     try {
-        const idFromBooksResults = await sql.query(bookEntry(userId, bookId));
-        const idFromBooks = idFromBooksResults[0]?.id;
-        const query = 
-        `UPDATE bookUsers
+        const query =
+            `UPDATE bookUsers
         SET shelves = ROW(
-            ${`${shelf === Shelf.TBR ? `array_remove((shelves).TBR, ${idFromBooks})` : "(shelves).TBR"}`},
-            ${`${shelf === Shelf.READ ? `array_remove((shelves).READ, ${idFromBooks})` : "(shelves).READ"}`},
-            ${`${shelf === Shelf.READING ? `array_remove((shelves).READING, ${idFromBooks})` : "(shelves).READING"}`},
-            ${`${shelf === Shelf.DNF ? `array_remove((shelves).DNF, ${idFromBooks})` : "(shelves).DNF"}`}
+            ${`${shelf === Shelf.TBR ? `array_remove((shelves).TBR, ${id})` : "(shelves).TBR"}`},
+            ${`${shelf === Shelf.READ ? `array_remove((shelves).READ, ${id})` : "(shelves).READ"}`},
+            ${`${shelf === Shelf.READING ? `array_remove((shelves).READING, ${id})` : "(shelves).READING"}`},
+            ${`${shelf === Shelf.DNF ? `array_remove((shelves).DNF, ${id})` : "(shelves).DNF"}`}
         )::shelvesType
         WHERE id = ${userId};
 `;
@@ -107,8 +140,8 @@ export async function editFormats(bookId: string, userId: number, formats: Forma
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
     try {
-        const query = 
-        `UPDATE books
+        const query =
+            `UPDATE books
         SET formats = ARRAY[${formats.join(",")}]
         WHERE bookid='${bookId}' AND userId='${userId}';`;
         console.log(query);
@@ -118,6 +151,22 @@ export async function editFormats(bookId: string, userId: number, formats: Forma
     } catch (e) {
         console.log(e);
         return false;
+    }
+}
+
+export async function getAllBookInfo(id: number): Promise<BookData[]> {
+    // Connect to the Neon database
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    // Insert the comment from the form into the Postgres database
+    try {
+        const query = `SELECT * FROM books WHERE id=${id}`;
+        console.log(query);
+        const response = await sql.query(query);
+        console.log(response);
+        return response as BookData[];
+    } catch (e) {
+        console.log(e);
+        return [];
     }
 }
 

@@ -7,12 +7,12 @@
   --button-secondary-hover: #f2f2f2;
 
   display: grid;
-  grid-template-rows: auto auto;
-  align-items: center;
+  grid-template-rows: 36px 32px auto;
   justify-items: center;
   min-height: 100svh;
-  padding: 64px;
+  padding:16px 64px;
   font-family: var(--font-geist-sans);
+  gap: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -26,6 +26,35 @@
   }
 }
 
+.nav > a {
+  position: absolute;
+  left: 64px;
+}
+
+.shelfNav > * {
+  padding: 0px 12px;
+  box-sizing: content-box;
+  border: solid lightgrey;
+  border-width: 0 1px 0 0;
+}
+.shelfNav > *:last-child {
+  border: 0;
+}
+
+.nav > .shelfNav > .tbrnav:hover {
+  background-color: #2baefa20;
+}
+.nav > .shelfNav > .readingnav:hover {
+  background-color: #4395f320;
+}
+.nav > .shelfNav > .readnav:hover {
+  background-color: #5576eb20;
+}
+.nav > .shelfNav > .dnfnav:hover {
+  background-color: #6058e220;
+}
+
+
 .bookResults {
   display: grid;
   grid-template-columns: min-content auto min-content;
@@ -34,7 +63,12 @@
   font-size: 10px;
   line-height: 14px;
   column-gap: 16px;
-  margin-top: 32px;
+  margin-top: 30px;
+}
+
+.pageLoading {
+  height: 100%;
+  align-self: center;
 }
 
 .bookRow {

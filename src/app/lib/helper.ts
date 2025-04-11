@@ -11,6 +11,8 @@ export enum Shelf {
     DNF = "DNF"
 }
 
+export const userId = 3;
+
 export const bookEntry = (userId: number, bookId: string) => `
         INSERT INTO books (userId, bookId)
         VALUES (${userId}, '${bookId}')
