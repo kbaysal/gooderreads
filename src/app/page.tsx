@@ -154,6 +154,7 @@ const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: nu
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [props.firstState?.id, onShelf, props.book.id, props.updateId]
   );
 

@@ -61,6 +61,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
             open={props.isOpen}
             title={`${props.book.volumeInfo.title} by ${props.book.volumeInfo.authors.join(", ")}`}
             onCancel={props.closeModal}
+            className={styles.modal}
             footer={
                 [
                     <Button key="cancel" onClick={props.closeModal}>Cancel</Button>,
