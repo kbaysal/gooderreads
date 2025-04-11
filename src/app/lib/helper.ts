@@ -12,6 +12,7 @@ export enum Shelf {
 }
 
 export const userId = 3;
+export const mobileThreshold = 700;
 
 export const bookEntry = (userId: number, bookId: string) => `
         INSERT INTO books (userId, bookId)

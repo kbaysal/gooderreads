@@ -29,10 +29,15 @@
 .nav > a {
   position: absolute;
   left: 64px;
+  padding: 0 12px;
+}
+
+.nav a {
+  border-radius: 0;
 }
 
 .shelfNav > * {
-  padding: 0px 12px;
+  padding: 0 12px;
   box-sizing: content-box;
   border: solid lightgrey;
   border-width: 0 1px 0 0;
@@ -118,4 +123,27 @@
   gap: 4px;
   position: absolute;
   transform: translateX(-24px);
+}
+
+.onShelfIcon {
+  background-color: #1677ff;
+  border-radius: 8px;
+  padding: 4px;
+  box-sizing: content-box;
+  color: white;
+}
+
+@media screen and (max-width: 700px) {
+  .page {
+    padding: 16px;
+  }
+
+  .nav > a {
+    left: 16px;
+  }
+
+  .nav > a,
+  .shelfNav > * {
+    padding: 0 8px; 
+  }
 }

@@ -1,14 +1,15 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
-import { IconBook, IconBook2, IconBookmark, IconTag, IconVocabularyOff } from "@tabler/icons-react";
-import { Button, ConfigProvider, Input, Spin, Tooltip } from 'antd';
+import { IconBook, IconBook2, IconBookmark, IconPlus, IconTag, IconVocabularyOff } from "@tabler/icons-react";
+import { Button, ConfigProvider, Dropdown, Input, MenuProps, Spin, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { KeyboardEvent, useCallback, useEffect, useState } from "react";
+import { KeyboardEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Formats } from './components/FormatButtons';
 import Header from './components/Header';
 import { LabelsModal } from './components/LabelsModal';
+import { useIsMobile } from './hooks';
 import { addToShelf, existsOnShelf, firstLookup, removeFromShelf } from "./lib/data";
 import { Format, Shelf, userId } from './lib/helper';
 import styles from "./page.module.css";
@@ -68,7 +69,7 @@ export default function Home() {
     <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }}>
       <div className={styles.page}>
         <Header />
-        <Input placeholder="book name" onPressEnter={onEnter} />
+        <Input placeholder="search for book, use quotes for exact match, intitle:, inauthor:" onPressEnter={onEnter} />
         {existingShelfLoading && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
         {!existingShelfLoading &&
           <div className={styles.bookResults}>
@@ -85,12 +86,16 @@ export default function Home() {
   );
 }
 
+const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
 
 const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: number, bookId: string) => void }) => {
   const bookInfo = props.book.volumeInfo;
   const [onShelf, setOnShelf] = useState<Shelf | undefined>(props.firstState?.shelf);
   const [formatsChosen, setFormatChosen] = useState<boolean[]>([false, false, false]);
   const [modalOpen, openModal] = useState(false);
+  const isMobile = useIsMobile();
+  const iconSize = useMemo(() => getIconSize(isMobile), [isMobile]);
+  const buttonSize = useMemo(() => isMobile ? "small" : "middle", [isMobile])
 
   useEffect(
     () => {
@@ -166,6 +171,59 @@ const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: nu
   const tagClick = useCallback(() => openModal(true), []);
   const closeModal = useCallback(() => openModal(false), []);
 
+  const FormatsComponent = (
+    <Formats
+      formatsChosen={formatsChosen}
+      bookId={props.book.id}
+      setFormatsChosen={setFormatChosen}
+      className={styles.formats}
+      iconSize={18} />
+  );
+
+  const menuOptions: MenuProps['items'] = useMemo(
+    () => [
+      {
+        label: "TBR",
+        icon: <IconBookmark />,
+        key: Shelf.TBR,
+        onClick: tbrClick
+      },
+      {
+        label: "Reading",
+        icon: <IconBook />,
+        key: Shelf.READING,
+        onClick: readingClick,
+      },
+      {
+        label: "Read",
+        icon: <IconBook2 />,
+        key: Shelf.READ,
+        onClick: readClick
+      },
+      {
+        label: "DNF",
+        icon: <IconVocabularyOff />,
+        key: Shelf.DNF,
+        onClick: dnfClick
+      },
+      {
+        label: "Tag",
+        icon: <IconTag />,
+        key: "Tag",
+        onClick: tagClick
+      },
+    ],
+    [tbrClick, readingClick, readClick, dnfClick, tagClick]
+  );
+
+  const menuProps: MenuProps = useMemo(
+    () => ({
+      items: menuOptions,
+      selectedKeys: [onShelf as string]
+    }),
+    [menuOptions,onShelf]
+  );
+
   return (
     <>
       <img
@@ -183,36 +241,41 @@ const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: nu
         </div>
       </div>
       <div className={styles.buttons}>
-        <Tooltip title="TBR">
-          <Button icon={<IconBookmark />} onClick={tbrClick} type={onShelf === Shelf.TBR ? "primary" : undefined} />
-        </Tooltip>
+        {isMobile && (
+          <Dropdown menu={menuProps} >
+            {getMenuIcon(onShelf)}
+          </Dropdown>
+        )}
+        {!isMobile && (
+          <>
+            <Tooltip title="TBR">
+              <Button icon={<IconBookmark size={iconSize} />} onClick={tbrClick} type={onShelf === Shelf.TBR ? "primary" : undefined} size={buttonSize} />
+            </Tooltip>
 
-        <div className={styles.shelfButtons}>
-          <Tooltip title="Reading">
-            <Button icon={<IconBook />} onClick={readingClick} type={onShelf === Shelf.READING ? "primary" : undefined} />
-          </Tooltip>
-          {onShelf === Shelf.READING &&
-            <Formats formatsChosen={formatsChosen} bookId={props.book.id} setFormatsChosen={setFormatChosen} className={styles.formats} iconSize={18} />
-          }
-        </div>
+            <div className={styles.shelfButtons}>
+              <Tooltip title="Reading">
+                <Button icon={<IconBook size={iconSize} />} onClick={readingClick} type={onShelf === Shelf.READING ? "primary" : undefined} size={buttonSize} />
+              </Tooltip>
+              {onShelf === Shelf.READING && FormatsComponent}
+            </div>
 
-        <div className={styles.shelfButtons}>
-          <Tooltip title="Read">
-            <Button icon={<IconBook2 />} onClick={readClick} type={onShelf === Shelf.READ ? "primary" : undefined} />
-          </Tooltip>
-          {onShelf === Shelf.READ &&
-            <Formats formatsChosen={formatsChosen} bookId={props.book.id} setFormatsChosen={setFormatChosen} className={styles.formats} iconSize={18} />
-          }
-        </div>
+            <div className={styles.shelfButtons}>
+              <Tooltip title="Read">
+                <Button icon={<IconBook2 size={iconSize} />} onClick={readClick} type={onShelf === Shelf.READ ? "primary" : undefined} size={buttonSize} />
+              </Tooltip>
+              {onShelf === Shelf.READ && FormatsComponent}
+            </div>
 
-        <Tooltip title="DNF">
-          <Button icon={<IconVocabularyOff />} onClick={dnfClick} type={onShelf === Shelf.DNF ? "primary" : undefined} />
-        </Tooltip>
+            <Tooltip title="DNF">
+              <Button icon={<IconVocabularyOff size={iconSize} />} onClick={dnfClick} type={onShelf === Shelf.DNF ? "primary" : undefined} size={buttonSize} />
+            </Tooltip>
 
-        <Tooltip title="Tag">
-          <Button icon={<IconTag onClick={tagClick} />} />
-        </Tooltip>
-      </div>
+            <Tooltip title="Tag">
+              <Button icon={<IconTag size={iconSize} />} size={buttonSize} onClick={tagClick} />
+            </Tooltip>
+          </>
+        )}
+      </div >
       {modalOpen &&
         <LabelsModal
           key={props.book.id}
@@ -223,7 +286,23 @@ const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: nu
           bookState={props.firstState}
           formatsChosen={formatsChosen}
           setFormatsChosen={setFormatChosen}
-        />}
+        />
+      }
     </>
   )
 };
+
+const getMenuIcon = (onShelf: Shelf | undefined) => {
+  switch (onShelf) {
+    case Shelf.TBR:
+      return <IconBookmark className={styles.onShelfIcon}/>
+    case Shelf.READING: 
+      return <IconBook className={styles.onShelfIcon}/>
+    case Shelf.READ:
+      return <IconBook2 className={styles.onShelfIcon}/>
+    case Shelf.DNF: 
+      return <IconVocabularyOff className={styles.onShelfIcon}/>
+    default:
+      return <IconPlus />
+  }
+}
