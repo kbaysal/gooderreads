@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import '@ant-design/v5-patch-for-react-19';
+import { ConfigProvider } from "antd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+
+        <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
+          {children}
+        </ConfigProvider>
       </body>
     </html>
   );

@@ -5,8 +5,8 @@ import { Button, Checkbox, DatePicker, GetProp, InputNumber, Rate, Select } from
 import Modal from "antd/es/modal/Modal";
 import dayjs, { Dayjs } from 'dayjs';
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
-import { BookData, firstLookup, getAllBookInfo, updateBook } from "../lib/data";
-import { Format, Shelf } from "../lib/helper";
+import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, LabelFields, updateBook } from "../lib/data";
+import { Format, Shelf, userId } from "../lib/helper";
 import styles from "../styles/labels.module.css";
 import { Formats } from "./FormatButtons";
 import { DefaultOptionType } from "antd/es/select";
@@ -25,33 +25,45 @@ const { RangePicker } = DatePicker;
 
 export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const [bookData, setBookData] = useState<BookData>();
+    const [labels, setLabels] = useState<LabelFields>();
+
+    const formatsChosen = useMemo(
+        () => {
+            const formatsBooleanArray = [false, false, false, false];
+            if (bookData?.formats) {
+                bookData.formats.map((format) => formatsBooleanArray[format] = true);
+            }
+
+            return formatsBooleanArray;
+        },
+        [bookData?.formats]
+    )
 
     const sourceOptions = useMemo(
         () => {
-            if (bookData?.sources) {
+            if (labels?.sources) {
                 const options = [...sourceOptionsDefault];
-                bookData.sources.forEach(
+                labels.sources.forEach(
                     (key: string) => {
                         const option = options.find((val) => val.value === key);
                         if (!option) {
                             options.push({ value: key, label: key });
                         }
                     }
-                )
-
+                );
                 return options;
             }
 
             return sourceOptionsDefault;
         },
-        [bookData]
+        [labels?.sources]
     );
 
     const arcOptions = useMemo(
         () => {
-            if (bookData?.arc) {
+            if (labels?.arc) {
                 const options: DefaultOptionType[] = [];
-                bookData.arc.forEach(
+                labels.arc.forEach(
                     (key: string) => {
                         options.push({ value: key, label: key });
                     }
@@ -62,14 +74,14 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
 
             return [];
         },
-        [bookData]
+        [labels?.arc]
     );
 
     const diversityOptions = useMemo(
         () => {
-            if (bookData?.diversity) {
+            if (labels?.diversity) {
                 const options = [...diversityOptionsDefault];
-                bookData.diversity.forEach(
+                labels.diversity.forEach(
                     (key: string) => {
                         const option = options.find((val) => val.value === key);
                         if (!option) {
@@ -82,14 +94,14 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
 
             return diversityOptionsDefault;
         },
-        [bookData]
+        [labels?.diversity]
     );
 
     const labelsOptions = useMemo(
         () => {
-            if (bookData?.labels) {
+            if (labels?.labels) {
                 const options: DefaultOptionType[] = [];
-                bookData.labels.forEach(
+                labels.labels.forEach(
                     (key: string) => {
                         options.push({ value: key, label: key });
                     }
@@ -100,7 +112,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
 
             return [];
         },
-        [bookData]
+        [labels?.labels]
     );
 
     useEffect(
@@ -110,6 +122,9 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                     console.log("response", response?.[0]);
                     setBookData(response?.[0]);
                 });
+                getLabels(userId).then((response) => {
+                    setLabels(response?.[0]);
+                })
             }
         },
         [props.bookState?.id]
@@ -168,18 +183,32 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const onSourceChange = useCallback(
         (sources: string[]) => {
             if (bookData) {
-                setBookData({ ...bookData, sources })
+                setBookData({ ...bookData, sources });
+                sources.forEach(
+                    (label) => {
+                        if (!sourceOptions.some((option) => option.label === label)) {
+                            addLabel(userId, label, "sources");
+                        }
+                    }
+                )
             }
         },
-        [bookData]
+        [bookData, sourceOptions]
     );
     const onArcChange = useCallback(
         (arc: string[]) => {
             if (bookData) {
-                setBookData({ ...bookData, arc })
+                setBookData({ ...bookData, arc });
+                arc.forEach(
+                    (label) => {
+                        if (!arcOptions.some((option) => option.label === label)) {
+                            addLabel(userId, label, "arc");
+                        }
+                    }
+                )
             }
         },
-        [bookData]
+        [bookData, arcOptions]
     );
 
     const isDiverseClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, diverse: e.target.checked }), [bookData]);
@@ -190,9 +219,16 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         (diversity: string[]) => {
             if (bookData) {
                 setBookData({ ...bookData, diversity });
+                diversity.forEach(
+                    (label) => {
+                        if (!diversityOptions.some((option) => option.label === label)) {
+                            addLabel(userId, label, "diversity");
+                        }
+                    }
+                )
             }
         },
-        [bookData]
+        [bookData, diversityOptions]
     );
 
     const ownedChange = useCallback(
@@ -208,9 +244,20 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         (labels: string[]) => {
             if (bookData) {
                 setBookData({ ...bookData, labels });
+                console.log(labels);
+                console.log(labelsOptions);
+                labels.forEach(
+                    (label) => {
+                        console.log(label);
+                        if (!labelsOptions.some((option) => option.label === label)) {
+                            console.log(userId, label, "labels");
+                            addLabel(userId, label, "labels");
+                        }
+                    }
+                )
             }
         },
-        [bookData]
+        [bookData, labelsOptions]
     );
 
     return (
@@ -249,7 +296,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         <div className={styles.selection}>
                             Format:
                             <Formats
-                                formatsChosen={props.formatsChosen}
+                                formatsChosen={formatsChosen}
                                 bookId={props.book.id}
                                 setFormatsChosen={setFormatsChosen}
                                 className={styles.formatButtons}

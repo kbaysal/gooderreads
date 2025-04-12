@@ -26,10 +26,17 @@
   }
 }
 
+.nav {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .nav > a {
   position: absolute;
-  left: 64px;
   padding: 0 12px;
+  left: 0;
 }
 
 .nav a {
@@ -46,23 +53,46 @@
   border: 0;
 }
 
+
+.shelfNav > a {
+  animation: none;
+  transition: none;
+}
+
 .nav > .shelfNav > .tbrnav:hover {
   background-color: #2baefa20;
+}
+.nav > .shelfNav > .tbrnav.activeNav {
+  background-color: #2baefa;
+  cursor: default;
 }
 .nav > .shelfNav > .readingnav:hover {
   background-color: #4395f320;
 }
+.nav > .shelfNav > .readingnav.activeNav {
+  background-color: #4395f3;
+  cursor: default;
+}
 .nav > .shelfNav > .readnav:hover {
   background-color: #5576eb20;
 }
+.nav > .shelfNav > .readnav.activeNav {
+  background-color: #5576eb;
+  cursor: default;
+}
 .nav > .shelfNav > .dnfnav:hover {
   background-color: #6058e220;
+}
+.nav > .shelfNav > .dnfnav.activeNav {
+  background-color: #6058e2;
+  cursor: default;
 }
 
 
 .bookResults {
   display: grid;
   grid-template-columns: min-content auto min-content;
+  
   width: 100%;
   row-gap: 32px;
   font-size: 10px;
@@ -136,10 +166,6 @@
 @media screen and (max-width: 700px) {
   .page {
     padding: 16px;
-  }
-
-  .nav > a {
-    left: 16px;
   }
 
   .nav > a,

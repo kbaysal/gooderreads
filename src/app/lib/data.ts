@@ -10,25 +10,28 @@ export interface firstLookup {
     shelf: Shelf;
 }
 
-export interface BookData {
-    id: number;
+export interface LabelFields {
     userid: number;
+    sources?: string[];
+    diversity?: string[];
+    labels?: string[];
+    arc?: string[];
+    country?: string[];
+    genre?: string[];
+}
+
+export interface BookData extends LabelFields{
+    id: number;
     bookid: string;
     startdate?: Date;
     enddate?: Date;
     formats?: Format[];
     rating?: number;
     spice?: number;
-    sources?: string[];
     diverse?: boolean;
     bipoc?: boolean;
     lgbt?: boolean;
-    diversity?: string[];
-    labels?: string[];
     owned?: number;
-    arc?: string[];
-    country?: string[];
-    genre?: string[];
 }
 
 export async function existsOnShelf(bookIds: string[], userId: number): Promise<firstLookup[]> {
@@ -117,8 +120,8 @@ export async function removeFromShelf(shelf: string, id: number, userId: number)
             `UPDATE bookUsers
         SET shelves = ROW(
             ${`${shelf === Shelf.TBR ? `array_remove((shelves).TBR, ${id})` : "(shelves).TBR"}`},
-            ${`${shelf === Shelf.READ ? `array_remove((shelves).READ, ${id})` : "(shelves).READ"}`},
             ${`${shelf === Shelf.READING ? `array_remove((shelves).READING, ${id})` : "(shelves).READING"}`},
+            ${`${shelf === Shelf.READ ? `array_remove((shelves).READ, ${id})` : "(shelves).READ"}`},
             ${`${shelf === Shelf.DNF ? `array_remove((shelves).DNF, ${id})` : "(shelves).DNF"}`}
         )::shelvesType
         WHERE id = ${userId};
@@ -168,6 +171,19 @@ export async function getAllBookInfo(id: number): Promise<BookData[]> {
         console.log(e);
         return [];
     }
+}
+
+export async function getBooksFromShelf(shelf: Shelf, userId: number): Promise<firstLookup[]> {
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    const response = await sql.query(`
+        SELECT b.bookid, b.id, b.formats, '${shelf}' AS shelf
+        FROM books b
+        JOIN bookUsers u ON u.id = b.userid
+        WHERE b.id = ANY((u.shelves).${shelf})
+        AND u.id = ${userId};
+    `);
+    console.log(response);
+    return response as firstLookup[];
 }
 
 export async function updateBook(data: BookData): Promise<void> {
@@ -262,4 +278,42 @@ export async function updateBook(data: BookData): Promise<void> {
     console.log("====")
     console.log(result);
     //return result;
+}
+
+export const addLabel = async (userId: number, label: string, column: string) => {
+    const query = `
+    UPDATE labels
+    SET ${column} = array_append(${column}, '${label}')
+    WHERE userid = ${userId} AND NOT ('${label}' = ANY(${column}));
+    `;
+
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    try {
+        console.log(query);
+        const response = await sql.query(query);
+        console.log(response);
+        return true;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
+};
+
+export const getLabels = async (userId: number): Promise<LabelFields[]> => {
+    const query = `
+        SELECT * 
+        FROM labels
+        WHERE userid=${userId}
+    `;
+
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    try {
+        console.log(query);
+        const response = await sql.query(query);
+        console.log(response);
+        return response as LabelFields[];
+    } catch (e) {
+        console.log(e);
+        return [];
+    }
 }

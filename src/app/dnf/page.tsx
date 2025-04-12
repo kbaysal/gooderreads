@@ -1,13 +1,10 @@
 "use client"
 
-import Header from "../components/Header";
-import styles from "../page.module.css";
+import ShelfView from "../components/ShelfView";
+import { Shelf } from "../lib/helper";
 
-export default function TBR() {
+export default function DNF() {
     return (
-        <div className={styles.page}>
-            <Header />
-            This is your DNF!
-        </div>
+        <ShelfView shelf={Shelf.DNF} />
     )
 }

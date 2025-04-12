@@ -1,3 +1,4 @@
+
 export enum Format {
     Physical = 0,
     EBook = 1,
@@ -21,3 +22,15 @@ export const bookEntry = (userId: number, bookId: string) => `
         DO UPDATE SET bookId = EXCLUDED.bookId  -- or nothing, just prevents error
         RETURNING id;
 `;
+
+export const getBooks = (bookIds: string[]): Promise<Book[] | never[]> => {
+    return Promise.all(
+        bookIds.map((id: string) => fetch(`https://www.googleapis.com/books/v1/volumes/${id}`))
+    ).then((responses) => {
+        return Promise.all(responses.map(
+            async (response): Promise<Book> => { return await response.json()} 
+        )).then(
+            (value) => {return (value as Book[])}
+        ).catch(() => {return [];})
+    }).catch((reason) => {console.log(reason); return [];});
+}
