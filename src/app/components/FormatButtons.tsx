@@ -31,7 +31,7 @@ export const FormatButtons = (props: FormatButtonsProps) => (
                 color="pink"
             />
         </Tooltip>
-        <Tooltip title="EBook">
+        <Tooltip title="eBook">
             <Button
                 onClick={props.onEbook}
                 icon={<IconDeviceTabletBolt size={props.iconSize} />}

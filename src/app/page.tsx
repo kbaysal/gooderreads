@@ -43,9 +43,17 @@ export default function Home() {
           setExistingShelfLoading(true);
           const result: BookResponse = await response.json();
           console.log(result);
+          const resultSet = new Map<string, Book>();
           if (result?.items?.length > 0) {
-            result.items = result.items.filter((book) => book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0);
-            setBooks(result.items);
+            result.items = result.items.filter((book) => {
+              if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
+                resultSet.set(book.id, book);
+                return true;
+              }
+              return false;
+            });
+
+            setBooks(Array.from(resultSet.values()));
 
             const shelfState = await existsOnShelf(result.items.map((book) => book.id), userId);
             const shelfMap = new Map<string, firstLookup>();
@@ -221,7 +229,7 @@ const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: nu
       items: menuOptions,
       selectedKeys: [onShelf as string]
     }),
-    [menuOptions,onShelf]
+    [menuOptions, onShelf]
   );
 
   return (
@@ -295,13 +303,13 @@ const BookRow = (props: { book: Book, firstState: firstLookup, updateId: (id: nu
 const getMenuIcon = (onShelf: Shelf | undefined) => {
   switch (onShelf) {
     case Shelf.TBR:
-      return <IconBookmark className={styles.onShelfIcon}/>
-    case Shelf.READING: 
-      return <IconBook className={styles.onShelfIcon}/>
+      return <IconBookmark className={styles.onShelfIcon} />
+    case Shelf.READING:
+      return <IconBook className={styles.onShelfIcon} />
     case Shelf.READ:
-      return <IconBook2 className={styles.onShelfIcon}/>
-    case Shelf.DNF: 
-      return <IconVocabularyOff className={styles.onShelfIcon}/>
+      return <IconBook2 className={styles.onShelfIcon} />
+    case Shelf.DNF:
+      return <IconVocabularyOff className={styles.onShelfIcon} />
     default:
       return <IconPlus />
   }

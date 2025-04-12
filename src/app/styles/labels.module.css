@@ -13,13 +13,22 @@
     margin-top: 32px;
 }
 
-.modal :global(.ant-modal-body) > div {
+.selection {
     display: flex;
     align-items: center;
 }
 
-.modal :global(.ant-modal-body) > div > *:not(svg) {
+.selection  > *:not(svg) {
     margin-left: 12px;
+}
+
+.modal .doubleWide {
+    display: grid;
+    grid-template-columns: auto auto;
+}
+
+.doubleWide > *:last-child {
+    justify-content: end;
 }
 
 .formatButtons {
@@ -43,9 +52,24 @@
     border-width: 1px 1px 1px 0;
 }
 
-:global(.ant-modal-body) .rating span  {
-    margin-left: 6px;
+.modal :global(.ant-modal-body) .rating span  {
+    margin-left: 4px;
     margin-right: 2px;
+}
+
+.rating > div {
+    width: 65px;
+}
+
+.diversityRows {
+    display: grid;
+    grid-template-columns: min-content min-content auto;
+    overflow: hidden;
+    gap: 12px;
+}
+
+.modal .diversityRows > * {
+    margin: 0;
 }
 
 .diversityCheckboxes {

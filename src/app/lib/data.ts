@@ -14,21 +14,21 @@ export interface BookData {
     id: number;
     userid: number;
     bookid: string;
-    startdate: Date;
-    enddate: Date;
-    formats: Format[];
-    rating: number;
-    spice: number;
-    sources: string[];
-    diverse: boolean;
-    bipoc: boolean;
-    lgbt: boolean;
-    diversity: string[];
-    labels: string[];
-    owned: number;
-    arc: string[];
-    country: string[];
-    genre: string[];
+    startdate?: Date;
+    enddate?: Date;
+    formats?: Format[];
+    rating?: number;
+    spice?: number;
+    sources?: string[];
+    diverse?: boolean;
+    bipoc?: boolean;
+    lgbt?: boolean;
+    diversity?: string[];
+    labels?: string[];
+    owned?: number;
+    arc?: string[];
+    country?: string[];
+    genre?: string[];
 }
 
 export async function existsOnShelf(bookIds: string[], userId: number): Promise<firstLookup[]> {
@@ -73,7 +73,7 @@ export async function addToShelf(shelf: string, id: number, bookId: string, user
     // Insert the comment from the form into the Postgres database
     try {
         let idFromBooks = id;
-        if(!idFromBooks) {
+        if (!idFromBooks) {
             const idFromBooksResults = await sql.query(bookEntry(userId, bookId));
             idFromBooks = idFromBooksResults[0]?.id;
         }
@@ -170,5 +170,96 @@ export async function getAllBookInfo(id: number): Promise<BookData[]> {
     }
 }
 
+export async function updateBook(data: BookData): Promise<void> {
+    // Connect to the Neon database
+    const sql = neon(`${process.env.DATABASE_URL}`);
 
+    const fields: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const values: any[] = [];
+    let i = 1;
 
+    // Only push fields that are defined
+    if (data.startdate !== undefined) {
+        fields.push(`startdate = $${i++}`);
+        values.push(data.startdate);
+    }
+    if (data.enddate !== undefined) {
+        fields.push(`enddate = $${i++}`);
+        values.push(data.enddate);
+    }
+    if (data.formats !== undefined) {
+        fields.push(`formats = $${i++}`);
+        values.push(data.formats);
+    }
+    if (data.rating !== undefined) {
+        fields.push(`rating = $${i++}`);
+        values.push(data.rating);
+    }
+    if (data.spice !== undefined) {
+        fields.push(`spice = $${i++}`);
+        values.push(data.spice);
+    }
+    if (data.sources !== undefined) {
+        fields.push(`sources = $${i++}`);
+        values.push(data.sources);
+    }
+    if (data.diverse !== undefined) {
+        fields.push(`diverse = $${i++}`);
+        values.push(data.diverse);
+    }
+    if (data.bipoc !== undefined) {
+        fields.push(`bipoc = $${i++}`);
+        values.push(data.bipoc);
+    }
+    if (data.lgbt !== undefined) {
+        fields.push(`lgbt = $${i++}`);
+        values.push(data.lgbt);
+    }
+    if (data.diversity !== undefined) {
+        fields.push(`diversity = $${i++}`);
+        values.push(data.diversity);
+    }
+    if (data.labels !== undefined) {
+        fields.push(`labels = $${i++}`);
+        values.push(data.labels);
+    }
+    if (data.owned !== undefined) {
+        fields.push(`owned = $${i++}`);
+        values.push(data.owned);
+    }
+    if (data.arc !== undefined) {
+        fields.push(`arc = $${i++}`);
+        values.push(data.arc);
+    }
+    if (data.country !== undefined) {
+        fields.push(`country = $${i++}`);
+        values.push(data.country);
+    }
+    if (data.genre !== undefined) {
+        fields.push(`genre = $${i++}`);
+        values.push(data.genre);
+    }
+
+    if (fields.length === 0) {
+        console.log("Nothing to update");
+        return;
+    }
+
+    // Add the WHERE clause
+    const query = `
+    UPDATE books
+    SET ${fields.join(", ")}
+    WHERE id = $${i}
+  `;
+    values.push(data.id);
+
+    console.log("@@@@")
+    console.log(query);
+    console.log(values);
+
+    const result = await sql.query(query, values);
+    console.log("====")
+    console.log(result);
+    //return result;
+}

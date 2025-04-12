@@ -1,14 +1,15 @@
 "use client"
 
 import { IconCarambolaFilled, IconFlameFilled } from "@tabler/icons-react";
-import { Button, Checkbox, DatePicker, InputNumber, Rate, Select } from "antd";
+import { Button, Checkbox, DatePicker, GetProp, InputNumber, Rate, Select } from "antd";
 import Modal from "antd/es/modal/Modal";
 import dayjs, { Dayjs } from 'dayjs';
-import { JSX, useCallback, useEffect, useState } from "react";
-import { BookData, firstLookup, getAllBookInfo } from "../lib/data";
-import { Shelf } from "../lib/helper";
+import { JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { BookData, firstLookup, getAllBookInfo, updateBook } from "../lib/data";
+import { Format, Shelf } from "../lib/helper";
 import styles from "../styles/labels.module.css";
 import { Formats } from "./FormatButtons";
+import { DefaultOptionType } from "antd/es/select";
 
 interface LabelsModalProps {
     isOpen: boolean;
@@ -23,17 +24,91 @@ interface LabelsModalProps {
 const { RangePicker } = DatePicker;
 
 export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
-    const [serverResponse, setServerResponse] = useState<BookData>();
-    const [isDiverse, setIsDiverse] = useState(false);
+    const [bookData, setBookData] = useState<BookData>();
+
+    const sourceOptions = useMemo(
+        () => {
+            if (bookData?.sources) {
+                const options = [...sourceOptionsDefault];
+                bookData.sources.forEach(
+                    (key: string) => {
+                        const option = options.find((val) => val.value === key);
+                        if (!option) {
+                            options.push({ value: key, label: key });
+                        }
+                    }
+                )
+
+                return options;
+            }
+
+            return sourceOptionsDefault;
+        },
+        [bookData]
+    );
+
+    const arcOptions = useMemo(
+        () => {
+            if (bookData?.arc) {
+                const options: DefaultOptionType[] = [];
+                bookData.arc.forEach(
+                    (key: string) => {
+                        options.push({ value: key, label: key });
+                    }
+                )
+
+                return options;
+            }
+
+            return [];
+        },
+        [bookData]
+    );
+
+    const diversityOptions = useMemo(
+        () => {
+            if (bookData?.diversity) {
+                const options = [...diversityOptionsDefault];
+                bookData.diversity.forEach(
+                    (key: string) => {
+                        const option = options.find((val) => val.value === key);
+                        if (!option) {
+                            options.push({ value: key, label: key });
+                        }
+                    }
+                )
+                return options;
+            }
+
+            return diversityOptionsDefault;
+        },
+        [bookData]
+    );
+
+    const labelsOptions = useMemo(
+        () => {
+            if (bookData?.labels) {
+                const options: DefaultOptionType[] = [];
+                bookData.labels.forEach(
+                    (key: string) => {
+                        options.push({ value: key, label: key });
+                    }
+                )
+
+                return options;
+            }
+
+            return [];
+        },
+        [bookData]
+    );
 
     useEffect(
         () => {
-            console.log("trying to load all data for:", props.bookState?.id)
             if (props.bookState?.id) {
                 getAllBookInfo(props.bookState.id).then((response) => {
-                    setServerResponse(response?.[0]);
-                    console.log("server response");
-                    console.log(response?.[0]);
+                    console.log("response", response?.[0]);
+                    setBookData(response?.[0]);
                 });
             }
         },
@@ -42,19 +117,101 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
 
     const onSave = useCallback(
         () => {
-            console.log("saving");
-            props.closeModal();
+            if (bookData) {
+                console.log("saving");
+                console.log(bookData);
+                updateBook(bookData)
+                props.closeModal();
+            }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [bookData]
     );
 
-    const onChange = useCallback((info: Dayjs, dateString: string | string[]) => console.log(info, dateString), []);
-    const onRangeChange = useCallback((dates: [Dayjs | null, Dayjs | null] | null, dateStrings: [string, string]) => console.log(dates, dateStrings), []);
+    const onChange = useCallback((info: Dayjs) => bookData ? setBookData({ ...bookData, startdate: (info.toDate()) }) : null, [bookData]);
+    const onRangeChange = useCallback(
+        (dates: [Dayjs | null, Dayjs | null] | null) => (
+            bookData ? setBookData({ ...bookData, startdate: (dates?.[0]?.toDate()), enddate: (dates?.[0]?.toDate()) }) : null
+        ),
+        [bookData]
+    );
 
-    console.log("props.onshelf", props.onShelf);
+    const setFormatsChosen = useCallback(
+        (formatsChosen: boolean[]) => {
+            if (bookData) {
+                const formats: Format[] = [];
+                formatsChosen.forEach((format: boolean, index: number) => format ? formats.push(index) : null);
+                console.log("changing formats", formats);
+                setBookData({ ...bookData, formats });
+            }
+        },
+        [bookData]
+    );
+    const onRating = useCallback(
+        (value: 0 | 5 | null) => {
+            if (bookData) {
+                console.log("changing rating", value);
+                setBookData({ ...bookData, rating: value || undefined });
+            }
+        },
+        [bookData]
+    );
+    const onSpice = useCallback(
+        (value: number) => {
+            if (bookData) {
+                console.log("changing spice", value);
+                setBookData({ ...bookData, spice: value || undefined });
+            }
+        },
+        [bookData]
+    );
+    const onSourceChange = useCallback(
+        (sources: string[]) => {
+            if (bookData) {
+                setBookData({ ...bookData, sources })
+            }
+        },
+        [bookData]
+    );
+    const onArcChange = useCallback(
+        (arc: string[]) => {
+            if (bookData) {
+                setBookData({ ...bookData, arc })
+            }
+        },
+        [bookData]
+    );
 
-    const isDiverseClick = useCallback(() => setIsDiverse(!isDiverse), [isDiverse]);
+    const isDiverseClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, diverse: e.target.checked }), [bookData]);
+    const isBipocClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, bipoc: e.target.checked }), [bookData]);
+    const isLgbtClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, lgbt: e.target.checked }), [bookData]);
+
+    const onDiversityChange = useCallback(
+        (diversity: string[]) => {
+            if (bookData) {
+                setBookData({ ...bookData, diversity });
+            }
+        },
+        [bookData]
+    );
+
+    const ownedChange = useCallback(
+        (date: Dayjs, yearString: string | string[]) => {
+            if (bookData && typeof yearString === "string") {
+                setBookData({ ...bookData, owned: yearString ? parseInt(yearString) : undefined });
+            }
+        },
+        [bookData]
+    );
+
+    const onLabelsChange = useCallback(
+        (labels: string[]) => {
+            if (bookData) {
+                setBookData({ ...bookData, labels });
+            }
+        },
+        [bookData]
+    );
 
     return (
         <Modal
@@ -68,99 +225,116 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                     <Button key="save" onClick={onSave} type="primary">Save</Button>
                 ]}
         >
-            {serverResponse && props.onShelf === Shelf.READING &&
-                <div className={styles.dateSelector}>
-                    Date you started reading:
-                    <DatePicker defaultValue={dayjs(serverResponse?.startdate)} onChange={onChange} />
-                </div>
+            {bookData ?
+                (<>
+                    {props.onShelf === Shelf.READING &&
+                        <div className={`${styles.dateSelector} ${styles.selection}`}>
+                            Started reading:
+                            <DatePicker defaultValue={dayjs(bookData?.startdate)} onChange={onChange} />
+                        </div>
+                    }
+                    {bookData && props.onShelf === Shelf.READ &&
+                        <div className={`${styles.dateSelector} ${styles.selection}`}>
+                            Dates read:
+                            <RangePicker
+                                onChange={onRangeChange}
+                                allowEmpty={[true, true]}
+                                defaultValue={[
+                                    bookData?.startdate ? dayjs(new Date(bookData?.startdate)) : undefined,
+                                    bookData?.enddate ? dayjs(new Date(bookData?.enddate)) : undefined]
+                                } />
+                        </div>
+                    }
+                    <div className={styles.doubleWide}>
+                        <div className={styles.selection}>
+                            Format:
+                            <Formats
+                                formatsChosen={props.formatsChosen}
+                                bookId={props.book.id}
+                                setFormatsChosen={setFormatsChosen}
+                                className={styles.formatButtons}
+                                shape="default"
+                                size="large"
+                            />
+                        </div>
+
+                        <div className={styles.selection}>
+                            Bought?
+                            <DatePicker picker="year" onChange={ownedChange} defaultValue={bookData.owned ? dayjs(new Date((bookData.owned + 1) + "")) : undefined} />
+                        </div>
+                    </div>
+                    <div className={styles.doubleWide}>
+                        <div className={`${styles.rating} ${styles.selection}`}>
+                            Rating:
+                            <InputNumber min={0} max={5} onChange={onRating} defaultValue={bookData?.rating as 0 | 5} width={70} />
+                            <span className={styles.mediumText}>/5</span>
+                            <IconCarambolaFilled color="orange" />
+                        </div>
+                        <div className={styles.selection}>
+                            Spice level:
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
+                            <Rate character={<IconFlameFilled size={30} />} allowHalf allowClear onChange={onSpice} defaultValue={parseFloat((bookData?.spice as any) as string)} />
+
+                        </div>
+                    </div>
+                    <div className={styles.selection}>
+                        Source:
+                        <Select
+                            mode="tags"
+                            style={{ width: '100%' }}
+                            placeholder="Select or enter"
+                            onChange={onSourceChange}
+                            options={sourceOptions}
+                            defaultValue={bookData?.sources}
+                        />
+                    </div>
+                    <div className={styles.selection}>
+                        ARC:
+                        <Select
+                            mode="tags"
+                            style={{ width: '100%' }}
+                            placeholder="Select or enter"
+                            onChange={onArcChange}
+                            options={arcOptions}
+                            defaultValue={bookData?.arc}
+                        />
+                    </div>
+                    <div className={`${styles.selection} ${styles.diversityRows}`}>
+                        Diversity:
+                        <div className="styles.diversityCheckboxes">
+                            <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Diverse?</Checkbox>
+                            <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>BIPOC?</Checkbox>
+                            <Checkbox onChange={isLgbtClick} defaultChecked={bookData.lgbt}>LGBTQIA+?</Checkbox>
+                        </div>
+                        <Select
+                            mode="tags"
+                            style={{ width: '100%' }}
+                            placeholder="Enter diversity labels"
+                            onChange={onDiversityChange}
+                            disabled={!bookData?.diverse}
+                            options={diversityOptions}
+                            defaultValue={bookData?.diversity}
+                        />
+                    </div>
+                    <div className={styles.selection}>
+                        Other labels:
+                        <Select
+                            mode="tags"
+                            style={{ width: '100%' }}
+                            placeholder="Enter anything else to track"
+                            onChange={onLabelsChange}
+                            options={labelsOptions}
+                            defaultValue={bookData.labels}
+                        />
+                    </div>
+                </>) : null
             }
-            {serverResponse && props.onShelf === Shelf.READ &&
-                <div className={styles.dateSelector}>
-                    Dates you read:
-                    <RangePicker
-                        onChange={onRangeChange}
-                        allowEmpty={[true, true]}
-                        defaultValue={[
-                            serverResponse?.startdate ? dayjs(new Date(serverResponse?.startdate)) : undefined,
-                            serverResponse?.enddate ? dayjs(new Date(serverResponse?.enddate)) : undefined]
-                        } />
-                </div>
-            }
-            <div>
-                Format:
-                <Formats
-                    formatsChosen={props.formatsChosen}
-                    bookId={props.book.id}
-                    setFormatsChosen={props.setFormatsChosen}
-                    className={styles.formatButtons}
-                    shape="default"
-                    size="large"
-                />
-            </div>
-            <div className={styles.rating}>
-                Rating:
-                <InputNumber min={0} max={5} onChange={() => console.log("input")} />
-                <span className={styles.mediumText}>/5</span>
-                <IconCarambolaFilled color="orange" />
-            </div>
-            <div>
-                Spice level:
-                <Rate character={<IconFlameFilled size={30} />} allowHalf allowClear />
-            </div>
-            <div>
-                Source:
-                <Select
-                    mode="tags"
-                    style={{ width: '100%' }}
-                    placeholder="Select or enter"
-                    onChange={(value) => console.log(value)}
-                    options={sourceOptions}
-                />
-            </div>
-            <div>
-                ARC:
-                <Select
-                    mode="tags"
-                    style={{ width: '100%' }}
-                    placeholder="Select or enter"
-                    onChange={(value) => console.log(value)}
-                    options={sourceOptions}
-                />
-            </div>
-            <div>
-                Diversity:
-                <div className="styles.diversityCheckboxes">
-                    <Checkbox onClick={isDiverseClick}>Diverse?</Checkbox>
-                    <Checkbox>BIPOC?</Checkbox>
-                    <Checkbox>LGBTQIA+?</Checkbox>
-                </div>
-                <Select
-                    mode="tags"
-                    style={{ width: '100%' }}
-                    placeholder="Enter diversity labels"
-                    onChange={(value) => console.log(value)}
-                    disabled={!isDiverse}
-                    options={diversityOptions}
-                />
-            </div>
-            <div>
-                Bought?
-                <DatePicker picker="month" />
-            </div>
-            <div>
-                Other labels:
-                <Select
-                    mode="tags"
-                    style={{ width: '100%' }}
-                    placeholder="Enter anything else to track"
-                    onChange={(value) => console.log(value)}
-                />
-            </div>
+
         </Modal>
     )
 };
 
-const sourceOptions = [
+const sourceOptionsDefault = [
     { value: "library", label: "library" },
     { value: "arc", label: "ARC" },
     { value: "shelves", label: "shelves" },
@@ -172,4 +346,30 @@ const diversityLabels = ["lesbian", "gay", "bi/pan", "trans", "nonbinary", "quee
     "Fat", "Jewish", "Muslim", "Immigrant", "Elderly",
     "Feminism", "Climate Change", "Wealth Gap", "Translated", "Indie published"
 ];
-const diversityOptions = diversityLabels.map((label) => ({ value: label, label }));
+const diversityOptionsDefault = diversityLabels.map((label) => ({ value: label, label }));
+
+
+// const [isDiverse, setIsDiverse] = useState(false);
+// const [isBipoc, setIsBipoc] = useState(false);
+// const [isLgbt, setIsLgbt] = useState(false);
+// const [rating, setRating] = useState<number>();
+// const [formats, setFormats] = useState<Format[]>();
+// const [spice, setSpice] = useState<number>();
+// const [sources, setSources] = useState<string[]>([]);
+// const [arc, setArc] = useState<string[]>([]);
+// const [diversity, setDiversity] = useState<string[]>([]);
+// const [owned, setOwned] = useState<number>();
+// const [labels, setLabels] = useState<string[]>([]);
+
+
+
+// setIsBipoc(!!bookData.bipoc);
+// setIsDiverse(!!bookData.diverse);
+// setIsLgbt(!!bookData.lgbt);
+// setRating(bookData.rating);
+// setFormats(bookData.formats || []);
+// setSpice(bookData.spice);
+// setSources(bookData.sources || []);
+// setArc(bookData.arc || []);
+// setDiver
+// setOwned(bookData.owned, )
