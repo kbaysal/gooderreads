@@ -8,4 +8,5 @@
        - [ ] Improve title
        - [ ] Show labels
        - [ ] Filter by to read/to review/all
+   - [ ] Move search to its own thing so that it can be on all pages
    - [ ] Graphs
