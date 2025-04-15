@@ -1,27 +1,43 @@
 "use client"
 
-import { IconBook, IconBook2, IconBookmark, IconPlus, IconTag, IconVocabularyOff } from "@tabler/icons-react";
-import { Button, Dropdown, MenuProps, Tooltip } from "antd";
+import { IconBook, IconBook2, IconBookmark, IconInfoHexagon, IconPlus, IconTag, IconVocabularyOff } from "@tabler/icons-react";
+import { Button, Dropdown, MenuProps, Popover, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks";
 import { addToShelf, firstLookup, removeFromShelf } from "../lib/data";
 import { Format, Shelf, userId } from "../lib/helper";
+import styles from "../page.module.css";
 import { Formats } from "./FormatButtons";
 import { LabelsModal } from "./LabelsModal";
-import styles from "../page.module.css";
 
 const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
 const dateFormat = 'YYYY-MM-DD';
 
-export const BookRow = (props: { book: Book, firstState: firstLookup, updateId?: (id: number, bookId: string) => void }) => {
+interface BookRowProps {
+    book: Book;
+    firstState: firstLookup;
+    updateId?: (id: number, bookId: string) => void;
+    showLabels?: string[];
+}
+
+const popoverStyles = {
+    body: {
+        padding: "16px 24px",
+        maxWidth: 500,
+        maxHeight: 350,
+        overflow: "auto"
+    }
+}
+
+export const BookRow = (props: BookRowProps) => {
     const bookInfo = props.book.volumeInfo;
     const [onShelf, setOnShelf] = useState<Shelf | undefined>(props.firstState?.shelf);
     const [formatsChosen, setFormatChosen] = useState<boolean[]>([false, false, false]);
     const [modalOpen, openModal] = useState(false);
     const isMobile = useIsMobile();
     const iconSize = useMemo(() => getIconSize(isMobile), [isMobile]);
-    const buttonSize = useMemo(() => isMobile ? "small" : "middle", [isMobile])
+    const buttonSize = useMemo(() => isMobile ? "small" : "middle", [isMobile]);
 
     useEffect(
         () => {
@@ -156,7 +172,16 @@ export const BookRow = (props: { book: Book, firstState: firstLookup, updateId?:
                 alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
             />
             <div>
-                <div className={styles.bookTitle}>{bookInfo.title}</div>
+                <div className={styles.bookTitle}>
+                    {bookInfo.title}
+                    <Popover
+                        content={<div dangerouslySetInnerHTML={{ __html: bookInfo.description }}></div>}
+                        placement="right"
+                        styles={popoverStyles}
+                    >
+                        <IconInfoHexagon size={16} color="lightgray" />
+                    </Popover>
+                </div>
                 <div className={styles.author}>{bookInfo.authors?.join(", ")}</div>
                 <div className={styles.metadata}>
                     <span>{bookInfo.pageCount}p</span>

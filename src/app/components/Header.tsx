@@ -1,15 +1,21 @@
 "use client"
 
 import { IconBook, IconBook2, IconBookmark, IconHome, IconVocabularyOff } from "@tabler/icons-react";
-import { Button, ConfigProvider, Tooltip } from "antd";
+import { Button, ConfigProvider, Input, Tooltip } from "antd";
 import { usePathname } from "next/navigation";
 import { Shelf } from "../lib/helper";
 import styles from "../page.module.css";
+import { KeyboardEvent } from "react";
 
-export default function Home() {
+interface HeaderProps {
+    onEnter?: (e: KeyboardEvent<HTMLInputElement>) => void;
+}
+
+export default function Header(props: HeaderProps) {
     const path = usePathname();
     console.log("path", path);
     return (
+        <div className={styles.header}>
         <div className={styles.nav}>
             <Tooltip title="Go to home">
                 <Button variant="text" color="magenta" href="/"><IconHome size={32} /></Button>
@@ -19,6 +25,10 @@ export default function Home() {
                 <Nav shelf={Shelf.READING} className={styles.readingnav} color="#4395f3" icon={IconBook} />
                 <Nav shelf={Shelf.READ} className={styles.readnav} color="#5576eb" icon={IconBook2} />
                 <Nav shelf={Shelf.DNF} className={styles.dnfnav} color="#6058e2" icon={IconVocabularyOff} />
+            </div>
+        </div>
+            <div className={styles.searchbox}>
+                <Input placeholder="search for book, use quotes for exact match, intitle:, inauthor:" onPressEnter={props.onEnter} />
             </div>
         </div>
     );

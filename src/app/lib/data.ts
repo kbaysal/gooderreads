@@ -317,3 +317,26 @@ export const getLabels = async (userId: number): Promise<LabelFields[]> => {
         return [];
     }
 }
+
+export const getARCTBR = async (userId: number): Promise<firstLookup[]> => {
+    const query = `
+        SELECT b.bookid, b.id, 'TBR' AS shelf, b.formats
+        FROM books b
+        JOIN bookUsers u ON u.id = b.userid
+        WHERE b.id = ANY((u.shelves).TBR)
+            AND u.id = ${userId}
+            AND 'arc' = ANY(b.sources);
+    `;
+
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    try {
+        console.log(query);
+        const response = await sql.query(query);
+        console.log(response);
+        console.log(typeof response[0]);
+        return response as firstLookup[];
+    } catch (e) {
+        console.log(e);
+        return [];
+    }
+}
