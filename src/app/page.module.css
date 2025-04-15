@@ -206,4 +206,8 @@
   .bookResults img {
     max-width: 70px;
   }
+
+  .buttons {
+    width: 32px;
+  }
 }
