@@ -164,6 +164,7 @@
   align-self: center;
   display: flex;
   gap: 8px;
+  justify-content: center;
 }
 
 .shelfButtons {
@@ -200,5 +201,9 @@
   .nav > a,
   .shelfNav > * {
     padding: 0 8px; 
+  }
+
+  .bookResults img {
+    max-width: 70px;
   }
 }
