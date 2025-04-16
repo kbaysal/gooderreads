@@ -320,17 +320,24 @@ export const getLabels = async (userId: number): Promise<LabelFields[]> => {
 
 export const getARCTBR = async (userId: number): Promise<firstLookup[]> => {
     const query = `
-        SELECT b.bookid, b.id, 'TBR' AS shelf, b.formats
+        SELECT 
+            b.bookid, 
+            b.id, 
+            CASE
+                WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
+                WHEN b.id = ANY((u.shelves).READING) THEN 'READING'
+            END AS shelf, 
+            b.formats
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
-        WHERE b.id = ANY((u.shelves).TBR)
+        WHERE (b.id = ANY((u.shelves).TBR) OR b.id = ANY((u.shelves).READING))
             AND u.id = ${userId}
             AND 'arc' = ANY(b.sources);
     `;
 
     const sql = neon(`${process.env.DATABASE_URL}`);
     try {
-        console.log(query);
+        console.log("qqqqq", query);
         const response = await sql.query(query);
         console.log(response);
         console.log(typeof response[0]);

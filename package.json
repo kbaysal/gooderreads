@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@clerk/elements": "^0.23.14",
+    "@clerk/nextjs": "^6.15.0",
     "@neondatabase/serverless": "^1.0.0",
     "@tabler/icons-react": "^3.31.0",
     "antd": "^5.24.6",

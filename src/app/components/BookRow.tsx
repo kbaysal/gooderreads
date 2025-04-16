@@ -167,6 +167,7 @@ export const BookRow = (props: BookRowProps) => {
 
     return (
         <>
+            {/* eslint-disable-next-line @next/next/no-img-element*/}
             <img
                 className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail}
                 alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}

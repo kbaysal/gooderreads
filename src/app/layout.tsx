@@ -1,8 +1,14 @@
+import '@ant-design/v5-patch-for-react-19';
+import {
+  ClerkProvider,
+  SignedIn,
+  SignedOut
+} from '@clerk/nextjs';
+import { ConfigProvider } from "antd";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Signin from './components/Signin';
 import "./globals.css";
-import '@ant-design/v5-patch-for-react-19';
-import { ConfigProvider } from "antd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,13 +31,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-
-        <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
-          {children}
-        </ConfigProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body className={`${geistSans.variable} ${geistMono.variable}`}>
+          <SignedIn>
+            <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
+              {children}
+            </ConfigProvider>
+          </SignedIn>
+          <SignedOut>
+            <Signin />
+          </SignedOut>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
