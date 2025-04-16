@@ -38,15 +38,22 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          {currentpath === /_not-found}
-          <SignedIn>
-            <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
+          {currentPath === "/_not-found" ?
+            <>
               {children}
-            </ConfigProvider>
-          </SignedIn>
-          <SignedOut>
-            <Signin />
-          </SignedOut>
+            </>
+            :
+            <>
+              <SignedIn>
+                <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
+                  {children}
+                </ConfigProvider>
+              </SignedIn>
+              <SignedOut>
+                <Signin />
+              </SignedOut>
+            </>
+          }
         </body>
       </html>
     </ClerkProvider>
