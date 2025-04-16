@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Signin from './components/Signin';
 import "./globals.css";
-import { usePathname } from 'next/navigation';
+import { headers } from 'next/headers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,18 +26,19 @@ export const metadata: Metadata = {
   description: "Created by @bookwithacherryontop",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const currentPath = usePathname();
+  const headersList = await headers();
+  const path = headersList.get(':path:');
 
   return (
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          {currentPath === "/_not-found" ?
+          {path === "/_not-found" ?
             <>
               {children}
             </>
