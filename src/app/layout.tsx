@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Signin from './components/Signin';
 import "./globals.css";
+import { useRouter } from 'next/router';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const router = useRouter();
+  const currentPath = router.pathname;
+
   return (
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
+          {currentpath === /_not-found}
           <SignedIn>
             <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
               {children}
