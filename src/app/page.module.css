@@ -155,12 +155,12 @@
   display: grid;
   grid-template-columns: min-content auto min-content;
   grid-auto-rows: min-content;
+  row-gap: 16px;
+  column-gap: 16px;
   
   width: 100%;
-  row-gap: 24px;
   font-size: 10px;
   line-height: 14px;
-  column-gap: 16px;
 }
 
 .bookResults img {
