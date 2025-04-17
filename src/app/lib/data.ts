@@ -9,6 +9,7 @@ export interface firstLookup {
     formats: Format[];
     shelf: Shelf;
     arc?: string[];
+    releasedate?: string;
 }
 
 export interface LabelFields {
@@ -33,6 +34,8 @@ export interface BookData extends LabelFields{
     bipoc?: boolean;
     lgbt?: boolean;
     owned?: number;
+    releasedateG?: string;
+    releasedate?: string;
 }
 
 export async function existsOnShelf(bookIds: string[], userId: number): Promise<firstLookup[]> {
@@ -257,6 +260,10 @@ export async function updateBook(data: BookData): Promise<void> {
         fields.push(`genre = $${i++}`);
         values.push(data.genre);
     }
+    if(data.releasedate !== undefined) {
+        fields.push(`releaseDate = $${i++}`);
+        values.push(data.releasedate);
+    }
 
     if (fields.length === 0) {
         console.log("Nothing to update");
@@ -329,7 +336,8 @@ export const getARCTBR = async (userId: number): Promise<firstLookup[]> => {
                 WHEN b.id = ANY((u.shelves).READING) THEN 'READING'
             END AS shelf, 
             b.formats,
-            b.arc
+            b.arc,
+            b.releaseDate
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE (b.id = ANY((u.shelves).TBR) OR b.id = ANY((u.shelves).READING))

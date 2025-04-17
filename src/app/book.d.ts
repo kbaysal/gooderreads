@@ -15,6 +15,7 @@ interface Book {
         pageCount: number;
         printType: string;
         publishedDate: string;
+        publishedDateOverride?: Date;
         publisher: string;
         title: string;
     }

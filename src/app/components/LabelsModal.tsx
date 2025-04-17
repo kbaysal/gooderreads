@@ -1,7 +1,7 @@
 "use client"
 
 import { IconCarambolaFilled, IconFlameFilled } from "@tabler/icons-react";
-import { Button, Checkbox, DatePicker, GetProp, InputNumber, Rate, Select } from "antd";
+import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select } from "antd";
 import Modal from "antd/es/modal/Modal";
 import dayjs, { Dayjs } from 'dayjs';
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
@@ -151,6 +151,16 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         [bookData]
     );
 
+    const onReleaseDateChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+            if(bookData) {
+                const releasedate = e.target.value;
+                setBookData({...bookData, releasedate});
+            }
+        },
+        [bookData]
+    );
+
     const setFormatsChosen = useCallback(
         (formatsChosen: boolean[]) => {
             if (bookData) {
@@ -292,6 +302,9 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                                 } />
                         </div>
                     }
+                    <div>
+                        Release date: <Input defaultValue={bookData.releasedate ? dayjs(bookData.releasedate).format("YYYY-MM-DD") : props.book.volumeInfo.publishedDate} onChange={onReleaseDateChange}/>
+                    </div>
                     <div className={styles.doubleWide}>
                         <div className={styles.selection}>
                             Format:

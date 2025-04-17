@@ -12,7 +12,8 @@ import styles from "./page.module.css";
 const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?maxResults=20&printType=books&q=";
 
 const todoSort = (a: Book, b: Book) =>
-  new Date(a.volumeInfo?.publishedDate).valueOf() - new Date(b.volumeInfo?.publishedDate).valueOf();
+  (a.volumeInfo?.publishedDateOverride?.valueOf() || new Date(a.volumeInfo?.publishedDate).valueOf()) -
+  (b.volumeInfo?.publishedDateOverride?.valueOf() || new Date(b.volumeInfo?.publishedDate).valueOf());
 
 export default function Home() {
   const [books, setBooks] = useState<Book[]>();
@@ -35,6 +36,7 @@ export default function Home() {
             setTodoFirstState(todoState);
             getBooks(bookIds).then(
               (todoBooks) => {
+                todoBooks.map(todoBook => todoBook.volumeInfo.publishedDateOverride = todoState.get(todoBook.id).releasedate);
                 todoBooks = todoBooks.sort(todoSort);
                 setTodo(todoBooks)
               }
@@ -97,7 +99,7 @@ export default function Home() {
 
   return (
     <div className={styles.page}>
-      <Header onEnter={onEnter}/>
+      <Header onEnter={onEnter} />
       {todo && !books && !existingShelfLoading &&
         (
           <>
@@ -106,7 +108,16 @@ export default function Home() {
               {todo.map(
                 (book) => {
                   const firstState = todoFirstState?.get(book.id);
-                  return <BookRow book={book} key={book.id} firstState={firstState as firstLookup} updateId={updateId} showLabels={firstState?.arc}/>
+                  console.log(firstState);
+                  return (
+                    <BookRow
+                      book={book}
+                      key={book.id}
+                      firstState={firstState as firstLookup}
+                      updateId={updateId}
+                      showLabels={firstState?.arc}
+                    />
+                  )
                 }
               )}
             </div>

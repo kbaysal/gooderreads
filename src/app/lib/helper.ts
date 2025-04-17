@@ -15,9 +15,9 @@ export enum Shelf {
 export const userId = 3;
 export const mobileThreshold = 700;
 
-export const bookEntry = (userId: number, bookId: string) => `
-        INSERT INTO books (userId, bookId)
-        VALUES (${userId}, '${bookId}')
+export const bookEntry = (userId: number, bookId: string, releaseDateG?: string) => `
+        INSERT INTO books (userId, bookId${releaseDateG ? ", releaseDateG" : ""})
+        VALUES (${userId}, '${bookId}'${releaseDateG ? `, '${releaseDateG}'` : ""})
         ON CONFLICT (userId, bookId)
         DO UPDATE SET bookId = EXCLUDED.bookId  -- or nothing, just prevents error
         RETURNING id;
