@@ -153,9 +153,9 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
 
     const onReleaseDateChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            if(bookData) {
+            if (bookData) {
                 const releasedate = e.target.value;
-                setBookData({...bookData, releasedate});
+                setBookData({ ...bookData, releasedate });
             }
         },
         [bookData]
@@ -184,7 +184,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const onSpice = useCallback(
         (value: number) => {
             if (bookData) {
-                setBookData({ ...bookData, spice: value});
+                setBookData({ ...bookData, spice: value });
             }
         },
         [bookData]
@@ -301,8 +301,8 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                                 } />
                         </div>
                     }
-                    <div>
-                        Release date: <Input defaultValue={bookData.releasedate ? dayjs(bookData.releasedate).format("YYYY-MM-DD") : props.book.volumeInfo.publishedDate} onChange={onReleaseDateChange}/>
+                    <div className={styles.selection}>
+                        Release date: <Input defaultValue={bookData.releasedate ? dayjs(bookData.releasedate).format("YYYY-MM-DD") : props.book.volumeInfo.publishedDate} onChange={onReleaseDateChange} />
                     </div>
                     <div className={styles.doubleWide}>
                         <div className={styles.selection}>
@@ -347,20 +347,27 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                             defaultValue={bookData?.sources}
                         />
                     </div>
-                    <div className={styles.selection}>
-                        ARC:
-                        <Select
-                            mode="tags"
-                            style={{ width: '100%' }}
-                            placeholder="Select or enter"
-                            onChange={onArcChange}
-                            options={arcOptions}
-                            defaultValue={bookData?.arc}
-                        />
-                    </div>
+                    {bookData.sources && bookData.sources.indexOf("arc") > -1 && (
+                        <div className={`${styles.selection} ${styles.diversityRows}`}>
+                            ARC:
+                            <div className={styles.diversityCheckboxes}>
+                                <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Optional?</Checkbox>
+                                <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>Reviewed?</Checkbox>
+                            </div>
+                                <Select
+                                    mode="tags"
+                                    style={{ width: '100%' }}
+                                    placeholder="Enter ARC source"
+                                    onChange={onArcChange}
+                                    options={arcOptions}
+                                    defaultValue={bookData?.arc}
+                                />
+
+                        </div>
+                    )}
                     <div className={`${styles.selection} ${styles.diversityRows}`}>
                         Diversity:
-                        <div className="styles.diversityCheckboxes">
+                        <div className={styles.diversityCheckboxes}>
                             <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Diverse?</Checkbox>
                             <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>BIPOC?</Checkbox>
                             <Checkbox onChange={isLgbtClick} defaultChecked={bookData.lgbt}>LGBTQIA+?</Checkbox>

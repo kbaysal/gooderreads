@@ -6,7 +6,7 @@
        - [ ] Optional
        - [ ] Reviewed
   - [ ] Todo list
-       - [ ] Improve title
+       - [x] Improve title
        - [x] Show labels
        - [ ] Allow labels to be removed
        - [ ] Filter by to read/to review/all
