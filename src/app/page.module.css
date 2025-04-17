@@ -1,3 +1,7 @@
+.displayNone {
+  display: none;
+}
+
 .page {
   --gray-rgb: 0, 0, 0;
   --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
@@ -61,6 +65,10 @@
   border-radius: 0;
 }
 
+.shelfNav {
+  height: 32px;
+}
+
 .shelfNav > * {
   padding: 0 12px;
   box-sizing: content-box;
@@ -104,6 +112,38 @@
 .nav > .shelfNav > .dnfnav.activeNav {
   background-color: #6058e2;
   cursor: default;
+}
+
+.userButton {
+  position: absolute;
+  right: 0;
+  align-self: anchor-center;
+}
+
+.userPanel {
+  border-radius: 8px;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 6px 16px 0px, rgba(0, 0, 0, 0.12) 0px 3px 6px -4px, rgba(0, 0, 0, 0.05) 0px 9px 28px 8px;
+  width: min-content;
+}
+
+.userPanelContent {
+  padding: 8px;
+}
+
+.userPanelInfo {
+  padding: 6px 12px 12px;
+}
+
+.userPanelActions {
+  border: 0;
+}
+
+.userPanelActions > button {
+  padding: 10px 12px 8px;
+}
+
+.userPanelFooter {
+  display: none;
 }
 
 

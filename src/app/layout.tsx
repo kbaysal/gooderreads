@@ -1,15 +1,11 @@
 import '@ant-design/v5-patch-for-react-19';
 import {
-  ClerkProvider,
-  SignedIn,
-  SignedOut
+  ClerkProvider
 } from '@clerk/nextjs';
-import { ConfigProvider } from "antd";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Signin from './components/Signin';
+import MainLayout from './components/MainLayout';
 import "./globals.css";
-import { headers } from 'next/headers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,29 +27,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers();
-  const path = headersList.get(':path:');
 
   return (
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          {path === "/_not-found" ?
-            <>
-              {children}
-            </>
-            :
-            <>
-              <SignedIn>
-                <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>
-                  {children}
-                </ConfigProvider>
-              </SignedIn>
-              <SignedOut>
-                <Signin />
-              </SignedOut>
-            </>
-          }
+          <MainLayout>
+            {children}
+          </MainLayout>
         </body>
       </html>
     </ClerkProvider>

@@ -14,6 +14,18 @@ interface HeaderProps {
     onEnter?: (e: KeyboardEvent<HTMLInputElement>) => void;
 }
 
+const stylesForSignedInButton = {
+    elements: {
+        rootBox: styles.userButton,
+        userButtonPopoverFooter: styles.userPanelFooter,
+        userButtonPopoverCard: styles.userPanel,
+        userButtonPopoverMain: styles.userPanelContent,
+        userPreview: styles.userPanelInfo,
+        userButtonPopoverActions: styles.userPanelActions,
+        userButtonPopoverActionButton__manageAccount: styles.displayNone
+    }
+};
+
 export default function Header(props: HeaderProps) {
     const path = usePathname();
     console.log("path", path);
@@ -29,7 +41,7 @@ export default function Header(props: HeaderProps) {
                     <Nav shelf={Shelf.READ} className={styles.readnav} color="#5576eb" icon={IconBook2} />
                     <Nav shelf={Shelf.DNF} className={styles.dnfnav} color="#6058e2" icon={IconVocabularyOff} />
                 </div>
-                <UserButton />
+                <UserButton appearance={stylesForSignedInButton}/>
             </div>
             <div className={styles.searchbox}>
                 <Input placeholder="search for book, use quotes for exact match, intitle:, inauthor:" onPressEnter={props.onEnter} />
