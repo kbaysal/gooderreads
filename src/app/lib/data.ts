@@ -8,6 +8,7 @@ export interface firstLookup {
     bookid: string;
     formats: Format[];
     shelf: Shelf;
+    arc?: string[];
 }
 
 export interface LabelFields {
@@ -327,7 +328,8 @@ export const getARCTBR = async (userId: number): Promise<firstLookup[]> => {
                 WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
                 WHEN b.id = ANY((u.shelves).READING) THEN 'READING'
             END AS shelf, 
-            b.formats
+            b.formats,
+            b.arc
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE (b.id = ANY((u.shelves).TBR) OR b.id = ANY((u.shelves).READING))

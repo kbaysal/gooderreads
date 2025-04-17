@@ -146,6 +146,10 @@
   display: none;
 }
 
+.pageLoading {
+  height: 100%;
+  align-self: center;
+}
 
 .bookResults {
   display: grid;
@@ -153,29 +157,26 @@
   grid-auto-rows: min-content;
   
   width: 100%;
-  row-gap: 32px;
+  row-gap: 24px;
   font-size: 10px;
   line-height: 14px;
   column-gap: 16px;
 }
 
-.pageLoading {
-  height: 100%;
-  align-self: center;
-}
-
-.bookRow {
-  border-bottom: 1px solid rgba(var(--gray-rgb), 0.05);
-}
-
 .bookResults img {
-  height: 80px;
+  height: 90px;
   justify-self: center;
+}
+
+.bookInfo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .bookTitle {
   font-size: 18px;
-  line-height: 26px;
+  line-height: 20px;
   font-family: Cochin, Georgia, Times, 'Times New Roman', serif;
   display: flex;
   align-items: center;
@@ -186,17 +187,22 @@
 }
 
 .author {
-  font-size: 16px;
-  line-height: 18px;
+  font-size: 14px;
+  line-height: 16px;
   margin-top: 2px;
   font-family: Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+
+.tags {
+  margin-left: -2px;
+  flex: 1;
+  align-content: center;
 }
 
 .metadata {
   display: grid;
   grid-template-columns: max-content max-content max-content max-content;
   gap: 8px;
-  margin-top: 20px;
   color: rgb(80, 70, 70);
 }
 

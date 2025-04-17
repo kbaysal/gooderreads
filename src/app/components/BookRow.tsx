@@ -1,7 +1,7 @@
 "use client"
 
 import { IconBook, IconBook2, IconBookmark, IconInfoHexagon, IconPlus, IconTag, IconVocabularyOff } from "@tabler/icons-react";
-import { Button, Dropdown, MenuProps, Popover, Tooltip } from "antd";
+import { Button, Dropdown, MenuProps, Popover, Tag, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks";
@@ -172,7 +172,7 @@ export const BookRow = (props: BookRowProps) => {
                 className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail}
                 alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
             />
-            <div>
+            <div className={styles.bookInfo}>
                 <div className={styles.bookTitle}>
                     {bookInfo.title}
                     <Popover
@@ -184,6 +184,11 @@ export const BookRow = (props: BookRowProps) => {
                     </Popover>
                 </div>
                 <div className={styles.author}>{bookInfo.authors?.join(", ")}</div>
+                {props.showLabels?.length &&
+                    <div className={styles.tags}>
+                        {props.showLabels.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
+                    </div>
+                }
                 <div className={styles.metadata}>
                     <span>{bookInfo.pageCount}p</span>
                     <span>{bookInfo.publishedDate}</span>

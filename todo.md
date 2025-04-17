@@ -1,12 +1,14 @@
 # GooderReads
-   - [ ] Login 
+   - [x] Login 
+       - [ ] Might wanna build a /signin flow
    - [ ] Labeling window
        - [ ] Release date
        - [ ] Optional
        - [ ] Reviewed
   - [ ] Todo list
        - [ ] Improve title
-       - [ ] Show labels
+       - [x] Show labels
+       - [ ] Allow labels to be removed
        - [ ] Filter by to read/to review/all
    - [ ] Move search to its own thing so that it can be on all pages
    - [ ] Graphs

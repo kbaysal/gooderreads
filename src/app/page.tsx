@@ -106,8 +106,7 @@ export default function Home() {
               {todo.map(
                 (book) => {
                   const firstState = todoFirstState?.get(book.id);
-                  console.log(firstState);
-                  return <BookRow book={book} key={book.id} firstState={firstState as firstLookup} updateId={updateId} />
+                  return <BookRow book={book} key={book.id} firstState={firstState as firstLookup} updateId={updateId} showLabels={firstState?.arc}/>
                 }
               )}
             </div>
