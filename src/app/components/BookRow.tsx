@@ -191,7 +191,7 @@ export const BookRow = (props: BookRowProps) => {
                 }
                 <div className={styles.metadata}>
                     <span>{bookInfo.pageCount}p</span>
-                    <span>{props.firstState.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}</span>
+                    <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}</span>
                     <span>{bookInfo.publisher}</span>
                     <span>{props.book.saleInfo.country}</span>
                 </div>
