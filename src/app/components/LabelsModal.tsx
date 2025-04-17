@@ -184,8 +184,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const onSpice = useCallback(
         (value: number) => {
             if (bookData) {
-                console.log("changing spice", value);
-                setBookData({ ...bookData, spice: value || undefined });
+                setBookData({ ...bookData, spice: value});
             }
         },
         [bookData]
