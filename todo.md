@@ -2,9 +2,10 @@
    - [x] Login 
        - [ ] Might wanna build a /signin flow
    - [ ] Labeling window
-       - [ ] Release date
-       - [ ] Optional
-       - [ ] Reviewed
+       - [x] Release date
+            - [ ] Introduce smarter logic so that newer GAPI can overwrite the user overwrite
+       - [x] Optional
+       - [x] Reviewed
   - [ ] Todo list
        - [x] Improve title
        - [x] Show labels
