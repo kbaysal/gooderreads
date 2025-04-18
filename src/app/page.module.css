@@ -234,6 +234,15 @@
   color: white;
 }
 
+.todoTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.red {
+  color: #F5222D;
+}
+
 @media screen and (max-width: 700px) {
   .page {
     padding: 16px;

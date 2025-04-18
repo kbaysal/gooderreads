@@ -6,10 +6,12 @@ import Modal from "antd/es/modal/Modal";
 import dayjs, { Dayjs } from 'dayjs';
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, LabelFields, updateBook } from "../lib/data";
-import { Format, Shelf, userId } from "../lib/helper";
+import { Format, Shelf } from "../lib/helper";
 import styles from "../styles/labels.module.css";
 import { Formats } from "./FormatButtons";
 import { DefaultOptionType } from "antd/es/select";
+import { useAuth } from "@clerk/nextjs";
+import { useIsMobile } from "../hooks";
 
 interface LabelsModalProps {
     isOpen: boolean;
@@ -26,6 +28,8 @@ const { RangePicker } = DatePicker;
 export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const [bookData, setBookData] = useState<BookData>();
     const [labels, setLabels] = useState<LabelFields>();
+    const { userId } = useAuth();
+    const isMobile = useIsMobile();
 
     const formatsChosen = useMemo(
         () => {
@@ -117,17 +121,17 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
 
     useEffect(
         () => {
-            if (props.bookState?.id) {
+            if (props.bookState?.id && userId) {
                 getAllBookInfo(props.bookState.id).then((response) => {
                     console.log("response", response?.[0]);
                     setBookData(response?.[0]);
                 });
-                getLabels(userId).then((response) => {
+                getLabels(userId as string).then((response) => {
                     setLabels(response?.[0]);
                 })
             }
         },
-        [props.bookState?.id]
+        [props.bookState?.id, userId]
     )
 
     const onSave = useCallback(
@@ -176,7 +180,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         (value: 0 | 5 | null) => {
             if (bookData) {
                 console.log("changing rating", value);
-                setBookData({ ...bookData, rating: value || undefined });
+                setBookData({ ...bookData, rating: value || null });
             }
         },
         [bookData]
@@ -196,14 +200,16 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 sources.forEach(
                     (label) => {
                         if (!sourceOptions.some((option) => option.label === label)) {
-                            addLabel(userId, label, "sources");
+                            addLabel(userId as string, label, "sources");
                         }
                     }
                 )
             }
         },
-        [bookData, sourceOptions]
+        [bookData, sourceOptions, userId]
     );
+    const isOptionalClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, arcoptional: e.target.checked }), [bookData]);
+    const isReviewedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, arcreviewed: e.target.checked }), [bookData]);
     const onArcChange = useCallback(
         (arc: string[]) => {
             if (bookData) {
@@ -211,13 +217,13 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 arc.forEach(
                     (label) => {
                         if (!arcOptions.some((option) => option.label === label)) {
-                            addLabel(userId, label, "arc");
+                            addLabel(userId as string, label, "arc");
                         }
                     }
                 )
             }
         },
-        [bookData, arcOptions]
+        [bookData, arcOptions, userId]
     );
 
     const isDiverseClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, diverse: e.target.checked }), [bookData]);
@@ -231,19 +237,21 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 diversity.forEach(
                     (label) => {
                         if (!diversityOptions.some((option) => option.label === label)) {
-                            addLabel(userId, label, "diversity");
+                            addLabel(userId as string, label, "diversity");
                         }
                     }
                 )
             }
         },
-        [bookData, diversityOptions]
+        [bookData, diversityOptions, userId]
     );
 
-    const ownedChange = useCallback(
+    const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, owned: e.target.checked }), [bookData]);
+
+    const boughtYearChange = useCallback(
         (date: Dayjs, yearString: string | string[]) => {
             if (bookData && typeof yearString === "string") {
-                setBookData({ ...bookData, owned: yearString ? parseInt(yearString) : undefined });
+                setBookData({ ...bookData, boughtyear: yearString ? parseInt(yearString) : null });
             }
         },
         [bookData]
@@ -260,13 +268,13 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         console.log(label);
                         if (!labelsOptions.some((option) => option.label === label)) {
                             console.log(userId, label, "labels");
-                            addLabel(userId, label, "labels");
+                            addLabel(userId as string, label, "labels");
                         }
                     }
                 )
             }
         },
-        [bookData, labelsOptions]
+        [bookData, labelsOptions, userId]
     );
 
     return (
@@ -285,13 +293,13 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 (<>
                     {props.onShelf === Shelf.READING &&
                         <div className={`${styles.dateSelector} ${styles.selection}`}>
-                            Started reading:
+                            <span className={styles.title}>Started reading:</span>
                             <DatePicker defaultValue={dayjs(bookData?.startdate)} onChange={onChange} />
                         </div>
                     }
                     {bookData && props.onShelf === Shelf.READ &&
                         <div className={`${styles.dateSelector} ${styles.selection}`}>
-                            Dates read:
+                            <span className={styles.title}>Dates read:</span>
                             <RangePicker
                                 onChange={onRangeChange}
                                 allowEmpty={[true, true]}
@@ -302,11 +310,12 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         </div>
                     }
                     <div className={styles.selection}>
-                        Release date: <Input defaultValue={bookData.releasedate ? dayjs(bookData.releasedate).format("YYYY-MM-DD") : props.book.volumeInfo.publishedDate} onChange={onReleaseDateChange} />
+                        <span className={styles.title}>Release date:</span>
+                        <Input defaultValue={bookData.releasedate ? dayjs(bookData.releasedate).format("YYYY-MM-DD") : props.book.volumeInfo.publishedDate} onChange={onReleaseDateChange} />
                     </div>
                     <div className={styles.doubleWide}>
                         <div className={styles.selection}>
-                            Format:
+                            <span className={styles.title}>Format:</span>
                             <Formats
                                 formatsChosen={formatsChosen}
                                 bookId={props.book.id}
@@ -318,26 +327,34 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         </div>
 
                         <div className={styles.selection}>
-                            Bought?
-                            <DatePicker picker="year" onChange={ownedChange} defaultValue={bookData.owned ? dayjs(new Date((bookData.owned + 1) + "")) : undefined} />
+                            <Checkbox onChange={isOwnedClick} defaultChecked={bookData.owned}>Bought?</Checkbox>
+                            {
+                                bookData.owned &&
+                                <DatePicker
+                                    picker="year"
+                                    onChange={boughtYearChange}
+                                    placeholder="Year"
+                                    defaultValue={bookData.boughtyear ? dayjs(new Date((bookData.boughtyear + 1) + "")) : undefined}
+                                />
+                            }
                         </div>
                     </div>
                     <div className={styles.doubleWide}>
                         <div className={`${styles.rating} ${styles.selection}`}>
-                            Rating:
+                            <span className={styles.title}>Rating:</span>
                             <InputNumber min={0} max={5} onChange={onRating} defaultValue={bookData?.rating as 0 | 5} width={70} />
                             <span className={styles.mediumText}>/5</span>
                             <IconCarambolaFilled color="orange" />
                         </div>
                         <div className={styles.selection}>
-                            Spice level:
+                            <span className={styles.title}>Spice:</span>
                             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any*/}
-                            <Rate character={<IconFlameFilled size={30} />} allowHalf allowClear onChange={onSpice} defaultValue={parseFloat((bookData?.spice as any) as string)} />
+                            <Rate character={<IconFlameFilled size={isMobile ? 24 : 30} />} allowHalf allowClear onChange={onSpice} defaultValue={parseFloat((bookData?.spice as any) as string)} />
 
                         </div>
                     </div>
                     <div className={styles.selection}>
-                        Source:
+                        <span className={styles.title}>Source:</span>
                         <Select
                             mode="tags"
                             style={{ width: '100%' }}
@@ -349,24 +366,24 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                     </div>
                     {bookData.sources && bookData.sources.indexOf("arc") > -1 && (
                         <div className={`${styles.selection} ${styles.diversityRows}`}>
-                            ARC:
+                            <span className={styles.title}>Arc:</span>
                             <div className={styles.diversityCheckboxes}>
-                                <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Optional?</Checkbox>
-                                <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>Reviewed?</Checkbox>
+                                <Checkbox onChange={isOptionalClick} defaultChecked={bookData.arcoptional}>Optional?</Checkbox>
+                                <Checkbox onChange={isReviewedClick} defaultChecked={bookData.arcreviewed}>Reviewed?</Checkbox>
                             </div>
-                                <Select
-                                    mode="tags"
-                                    style={{ width: '100%' }}
-                                    placeholder="Enter ARC source"
-                                    onChange={onArcChange}
-                                    options={arcOptions}
-                                    defaultValue={bookData?.arc}
-                                />
+                            <Select
+                                mode="tags"
+                                style={{ width: '100%' }}
+                                placeholder="Enter ARC source"
+                                onChange={onArcChange}
+                                options={arcOptions}
+                                defaultValue={bookData?.arc}
+                            />
 
                         </div>
                     )}
                     <div className={`${styles.selection} ${styles.diversityRows}`}>
-                        Diversity:
+                        <span className={styles.title}>Diversity:</span>
                         <div className={styles.diversityCheckboxes}>
                             <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Diverse?</Checkbox>
                             <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>BIPOC?</Checkbox>
@@ -383,7 +400,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         />
                     </div>
                     <div className={styles.selection}>
-                        Other labels:
+                        <span className={styles.title}>Other labels:</span>
                         <Select
                             mode="tags"
                             style={{ width: '100%' }}

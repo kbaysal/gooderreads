@@ -17,18 +17,20 @@
 .selection {
     display: flex;
     align-items: center;
+    white-space: nowrap;
 }
 
-.selection  > *:not(svg) {
-    margin-left: 12px;
+.title {
+    margin-right: 12px;
 }
 
 .modal .doubleWide {
     display: grid;
     grid-template-columns: auto auto;
+    gap: 16px;
 }
 
-.doubleWide > *:last-child {
+.doubleWide>*:last-child {
     justify-content: end;
 }
 
@@ -36,30 +38,36 @@
     border-radius: 8px;
 }
 
-.formatButtons > button:nth-child(1) {
+.formatButtons>button:nth-child(1) {
     border-radius: 8px 0 0 8px;
     border: solid #eb2f96;
     border-width: 1px 0 1px 1px;
 
 }
-.formatButtons > button:nth-child(2) {
+
+.formatButtons>button:nth-child(2) {
     border-radius: 0;
     border: solid #13c2c2;
     border-width: 1px 1px 1px 1px;
 }
-.formatButtons > button:nth-child(3) {
+
+.formatButtons>button:nth-child(3) {
     border-radius: 0 8px 8px 0;
     border: solid #722ed1;
     border-width: 1px 1px 1px 0;
 }
 
-.modal :global(.ant-modal-body) .rating span  {
+.modal :global(.ant-modal-body) .rating span:not(.title) {
     margin-left: 4px;
     margin-right: 2px;
 }
 
-.rating > div {
+.rating>div {
     width: 65px;
+}
+
+.selection :global(.ant-rate .ant-rate-star) {
+    margin: 0;
 }
 
 .diversityRows {
@@ -69,11 +77,17 @@
     gap: 12px;
 }
 
-.modal .diversityRows > * {
+.modal .diversityRows>* {
     margin: 0;
 }
 
 .diversityCheckboxes {
     display: flex;
     flex-direction: column;
+}
+
+@media screen and (max-width: 700px) {
+    .title {
+        margin-right: 6px;
+    }
 }

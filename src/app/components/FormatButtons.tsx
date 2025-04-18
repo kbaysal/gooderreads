@@ -5,7 +5,8 @@ import { Button, Tooltip } from "antd";
 import { SizeType } from "antd/es/config-provider/SizeContext";
 import { useCallback, useState } from "react";
 import { editFormats } from "../lib/data";
-import { Format, userId } from "../lib/helper";
+import { Format } from "../lib/helper";
+import { useAuth } from "@clerk/nextjs";
 
 type ShapeType = "circle" | "default" | "round" | undefined;
 
@@ -66,6 +67,7 @@ interface FormatsProps {
 
 export const Formats = (props: FormatsProps) => {
     const [timer, setTimer] = useState<number>();
+    const { userId } = useAuth();
 
     const onClick = useCallback(
         (format: Format) => {
@@ -78,10 +80,10 @@ export const Formats = (props: FormatsProps) => {
             setTimer(window.setTimeout(() => {
                 const formatArray: Format[] = [];
                 formats.forEach((isOn, index) => isOn && formatArray.push(index));
-                editFormats(props.bookId, userId, formatArray);
+                editFormats(props.bookId, userId as string , formatArray);
             }, 500));
         },
-        [props, timer]
+        [props, timer, userId]
     );
 
     const onPhysical = useCallback(() => onClick(Format.Physical), [onClick]);

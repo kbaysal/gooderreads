@@ -12,16 +12,18 @@ export enum Shelf {
     DNF = "DNF"
 }
 
-export const userId = 3;
 export const mobileThreshold = 700;
 
-export const bookEntry = (userId: number, bookId: string, releaseDateG?: string) => `
+export const bookEntry = (userId: string, bookId: string, releaseDateG?: string) => {
+    console.log("book entry ")
+    return `
         INSERT INTO books (userId, bookId${releaseDateG ? ", releaseDateG" : ""})
-        VALUES (${userId}, '${bookId}'${releaseDateG ? `, '${releaseDateG}'` : ""})
+        VALUES ('${userId}', '${bookId}'${releaseDateG ? `, '${releaseDateG}'` : ""})
         ON CONFLICT (userId, bookId)
         DO UPDATE SET bookId = EXCLUDED.bookId  -- or nothing, just prevents error
         RETURNING id;
-`;
+    `;
+}
 
 export const getBooks = (bookIds: string[]): Promise<Book[] | never[]> => {
     return Promise.all(

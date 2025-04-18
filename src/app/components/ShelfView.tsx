@@ -3,30 +3,35 @@
 import { useEffect, useState } from "react";
 import Header from "./Header";
 import styles from "../page.module.css";
-import { getBooks, Shelf, userId } from "../lib/helper";
+import { getBooks, Shelf } from "../lib/helper";
 import { firstLookup, getBooksFromShelf } from "../lib/data";
 import { Spin } from "antd";
 import { LoadingOutlined } from '@ant-design/icons';
 import { BookRow } from "./BookRow";
+import { useAuth } from "@clerk/nextjs";
 
 export default function ShelfView(props: {shelf: Shelf}) {
     const [books, setBooks] = useState<Book[]>();
     const [summarizedBookInfo, setSummarizedBookInfo]= useState<firstLookup[]>();
+    const { userId } = useAuth();
+    
     useEffect(
         () => {
-            getBooksFromShelf(props.shelf, userId).then(
-                (response) => {
-                    console.log(response);
-                    const bookIds = response.map((value) => value.bookid);
-                    setSummarizedBookInfo(response);
-                    getBooks(bookIds).then((results) => {
-                        console.log("results", results);
-                        setBooks(results);
-                    });
-                }
-            );
+            if(userId){
+                getBooksFromShelf(props.shelf, userId).then(
+                    (response) => {
+                        console.log(response);
+                        const bookIds = response.map((value) => value.bookid);
+                        setSummarizedBookInfo(response);
+                        getBooks(bookIds).then((results) => {
+                            console.log("results", results);
+                            setBooks(results);
+                        });
+                    }
+                );
+            }
         },
-        [props.shelf]
+        [props.shelf, userId]
     );
 
     return (

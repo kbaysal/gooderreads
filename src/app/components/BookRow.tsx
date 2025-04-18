@@ -6,10 +6,11 @@ import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks";
 import { addToShelf, firstLookup, removeFromShelf } from "../lib/data";
-import { Format, Shelf, userId } from "../lib/helper";
+import { Format, Shelf } from "../lib/helper";
 import styles from "../page.module.css";
 import { Formats } from "./FormatButtons";
 import { LabelsModal } from "./LabelsModal";
+import { useAuth } from "@clerk/nextjs";
 
 const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
 const dateFormat = 'YYYY-MM-DD';
@@ -38,6 +39,7 @@ export const BookRow = (props: BookRowProps) => {
     const isMobile = useIsMobile();
     const iconSize = useMemo(() => getIconSize(isMobile), [isMobile]);
     const buttonSize = useMemo(() => isMobile ? "small" : "middle", [isMobile]);
+    const { userId } = useAuth();
 
     useEffect(
         () => {
@@ -70,14 +72,14 @@ export const BookRow = (props: BookRowProps) => {
             if (onShelf !== shelf) {
                 if (onShelf) {
                     console.log("removing from existing", onShelf);
-                    await removeFromShelf(onShelf, props.firstState?.id, userId);
+                    await removeFromShelf(onShelf, props.firstState?.id, userId as string);
                 }
                 console.log("adding to", shelf, props.firstState?.id);
                 const response = await addToShelf(
                     shelf,
                     props.firstState?.id,
                     props.book?.id,
-                    userId,
+                    userId as string,
                     shelf === Shelf.READING ? dayjs().format(dateFormat) : undefined,
                     shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined,
                 );
@@ -92,7 +94,7 @@ export const BookRow = (props: BookRowProps) => {
                 }
             } else {
                 console.log("removing from", shelf);
-                if (await removeFromShelf(shelf, props.firstState?.id, userId)) {
+                if (await removeFromShelf(shelf, props.firstState?.id, userId as string)) {
                     console.log("removed");
                     setOnShelf(undefined);
                 } else {
@@ -101,7 +103,7 @@ export const BookRow = (props: BookRowProps) => {
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [props.firstState?.id, onShelf, props.book.id, props.updateId]
+        [props.firstState?.id, onShelf, props.book.id, props.updateId, userId]
     );
 
     const tbrClick = useCallback(() => shelfClick(Shelf.TBR), [shelfClick]);
