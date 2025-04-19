@@ -321,6 +321,7 @@ export const getARCTBR = async (userId: string, name?: string): Promise<firstLoo
             CASE
                 WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
                 WHEN b.id = ANY((u.shelves).READING) THEN 'READING'
+                WHEN b.id = ANY((u.shelves).READ) THEN 'READ'
             END AS shelf, 
             b.formats,
             b.arc,
@@ -329,7 +330,7 @@ export const getARCTBR = async (userId: string, name?: string): Promise<firstLoo
             b.releaseDate
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
-        WHERE (b.id = ANY((u.shelves).TBR) OR b.id = ANY((u.shelves).READING))
+        WHERE (b.id = ANY((u.shelves).TBR) OR b.id = ANY((u.shelves).READING) OR (b.id = ANY((u.shelves).READ) AND (arcreviewed IS NULL OR arcreviewed = FALSE)))
             AND u.id = '${userId}'
             AND 'arc' = ANY(b.sources);
     `;

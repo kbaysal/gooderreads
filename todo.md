@@ -11,5 +11,6 @@
        - [x] Show labels
        - [ ] Allow labels to be removed
        - [ ] Filter by to read/to review/all
+       - [ ] Collapsible lists
    - [ ] Move search to its own thing so that it can be on all pages
    - [ ] Graphs

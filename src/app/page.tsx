@@ -1,12 +1,12 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
-import { Spin } from 'antd';
+import { Collapse, CollapseProps, Spin } from 'antd';
 import { KeyboardEvent, useCallback, useEffect, useState } from "react";
 import { BookRow } from './components/BookRow';
 import Header from './components/Header';
 import { existsOnShelf, firstLookup, getARCTBR } from "./lib/data";
-import { getBooks } from './lib/helper';
+import { getBooks, Shelf } from './lib/helper';
 import styles from "./page.module.css";
 import { useAuth, useUser } from '@clerk/nextjs';
 import dayjs from 'dayjs';
@@ -21,8 +21,9 @@ export default function Home() {
   const [books, setBooks] = useState<Book[]>();
   const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
   const [existingShelfLoading, setExistingShelfLoading] = useState(false);
-  const [todoExpired, setTodoExpired] = useState<Book[]>();
-  const [todoComing, setTodoComing] = useState<Book[]>();
+  const [todoOverdue, setTodoOverdue] = useState<Book[]>();
+  const [todoUpcoming, setTodoUpcoming] = useState<Book[]>();
+  const [todoReview, setTodoReview] = useState<Book[]>();
   const [todoFirstState, setTodoFirstState] = useState<Map<string, firstLookup>>();
   const { userId } = useAuth();
   const { user } = useUser();
@@ -33,7 +34,7 @@ export default function Home() {
       if (user && userId) {
         const recent = true; //(new Date().valueOf() - (user.createdAt as Date).valueOf()) < 60000
         console.log("user created", user.createdAt, (new Date().valueOf() - (user.createdAt as Date).valueOf()) < 6000000);
-        getARCTBR(userId, recent  ? (user.fullName as string) : undefined).then(
+        getARCTBR(userId, recent ? (user.fullName as string) : undefined).then(
           (response) => {
             console.log(response);
             if (response?.length > 0) {
@@ -49,19 +50,26 @@ export default function Home() {
                   todoBooks = todoBooks.sort(todoSort);
                   const todoExpiredNew: Book[] = [];
                   const todoComingNew: Book[] = [];
+                  const todoReviewNew: Book[] = [];
                   const twoWeeksAgo = dayjs().subtract(2, 'week');
                   todoBooks.forEach(
                     (book) => {
-                      const releaseDate = book.volumeInfo.publishedDateOverride || book.volumeInfo.publishedDate;
-                      if(dayjs(releaseDate).isBefore(twoWeeksAgo)) {
-                        todoExpiredNew.push(book);
-                      } else {
-                        todoComingNew.push(book);
+                      if (todoState.get(book.id)?.shelf === Shelf.READ) {
+                        todoReviewNew.push(book);
+                      }
+                      else {
+                        const releaseDate = book.volumeInfo.publishedDateOverride || book.volumeInfo.publishedDate;
+                        if (dayjs(releaseDate).isBefore(twoWeeksAgo)) {
+                          todoExpiredNew.push(book);
+                        } else {
+                          todoComingNew.push(book);
+                        }
                       }
                     }
                   )
-                  setTodoExpired(todoExpiredNew);
-                  setTodoComing(todoComingNew);
+                  setTodoOverdue(todoExpiredNew);
+                  setTodoUpcoming(todoComingNew);
+                  setTodoReview(todoReviewNew);
                 }
               )
             }
@@ -121,67 +129,32 @@ export default function Home() {
 
   console.log(books, existingShelfLoading);
 
+  const items: CollapseProps['items'] = [
+    {
+      key: '1',
+      label: `Overdue (${todoOverdue?.length || 0})`,
+      children: <TodoSection todolist={todoOverdue} todoFirstState={todoFirstState} updateId={updateId} />,
+    },
+    {
+      key: '2',
+      label: `Upcoming (${todoUpcoming?.length || 0})`,
+      children: <TodoSection todolist={todoUpcoming} todoFirstState={todoFirstState} updateId={updateId} />,
+    },
+    {
+      key: '3',
+      label: `To rate (${todoReview?.length || 0})`,
+      children: <TodoSection todolist={todoReview} todoFirstState={todoFirstState} updateId={updateId} />,
+    },
+  ];
+
   return (
     <div className={styles.page}>
       <Header onEnter={onEnter} />
-      {todoExpired && todoComing && !books && !existingShelfLoading &&
-        (
-          <>
-            <div className={styles.todoTitle}><h3>TODO:</h3><p className={styles.red}>(Expired: {todoExpired?.length})</p></div>
-            <div className={styles.bookResults}>
-              {todoExpired.map(
-                (book) => {
-                  const firstState = todoFirstState?.get(book.id);
-                  const arcLabels: string[] = [];
-                  if(firstState?.arcreviewed) {
-                    arcLabels.push("Reviewed");
-                  }
-                  if(firstState?.arcoptional) {
-                    arcLabels.push("Optional");
-                  }
-                  if(firstState?.arc) {
-                    arcLabels.push(...firstState?.arc);
-                  }
-                  console.log(firstState);
-                  return (
-                    <BookRow
-                      book={book}
-                      key={book.id}
-                      firstState={firstState as firstLookup}
-                      updateId={updateId}
-                      showLabels={arcLabels}
-                    />
-                  )
-                }
-              )}
-              {todoComing.map(
-                (book) => {
-                  const firstState = todoFirstState?.get(book.id);
-                  const arcLabels: string[] = [];
-                  if(firstState?.arcreviewed) {
-                    arcLabels.push("Reviewed");
-                  }
-                  if(firstState?.arcoptional) {
-                    arcLabels.push("Optional");
-                  }
-                  if(firstState?.arc) {
-                    arcLabels.push(...firstState?.arc);
-                  }
-                  console.log(firstState);
-                  return (
-                    <BookRow
-                      book={book}
-                      key={book.id}
-                      firstState={firstState as firstLookup}
-                      updateId={updateId}
-                      showLabels={arcLabels}
-                    />
-                  )
-                }
-              )}
-            </div>
-          </>
-        )
+      {todoOverdue && todoUpcoming && !books && !existingShelfLoading &&
+        <>
+          <div className={styles.todoTitle}><h3>TODO:</h3></div>
+          <Collapse ghost items={items} />
+        </>
       }
       {existingShelfLoading && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
       {books && !existingShelfLoading &&
@@ -196,4 +169,36 @@ export default function Home() {
       }
     </div>
   );
+}
+
+const TodoSection = (props: { todolist: Book[] | undefined, todoFirstState: Map<string, firstLookup> | undefined, updateId: (id: number, bookId: string) => void }) => {
+  const { todolist, todoFirstState, updateId } = props;
+  return <div className={styles.bookResults}>
+    {todolist?.map(
+      (book) => {
+        const firstState = todoFirstState?.get(book.id);
+        const arcLabels: string[] = [];
+        if (firstState?.arcreviewed) {
+          arcLabels.push("Reviewed");
+        }
+        if (firstState?.arcoptional) {
+          arcLabels.push("Optional");
+        }
+        if (firstState?.arc) {
+          arcLabels.push(...firstState?.arc);
+        }
+        console.log(firstState);
+        return (
+          <BookRow
+            book={book}
+            key={book.id}
+            firstState={firstState as firstLookup}
+            updateId={updateId}
+            showLabels={arcLabels}
+          />
+        )
+      }
+    )}
+  </div>
+
 }
