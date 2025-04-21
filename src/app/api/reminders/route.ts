@@ -28,17 +28,17 @@ export async function GET(request: Request) {
     await Promise.all(
         Array.from(emailData.entries()).map(
             (data) => {
-                const [email, emailData] = data;
+                const [email, emailInfoArray] = data;
                 resend.emails.send({
                     from: 'Gooderreads <onboarding@resend.dev>',
                     to: [email],
                     subject: "You have ARCs releasing in a week!",
                     html: `
             <div>
-            <h3>Hi, ${data?.[0]?.name}!</h3>
+            <h3>Hi, ${emailInfoArray?.[0]?.name}!</h3>
             <p>These books are publishing within a week!</p>
             <ul>
-                ${emailData.map((val) => `<li>${val.bookid}</li>`).join('')}
+                ${emailInfoArray?.map((val) => `<li>${val.bookid}</li>`).join('')}
             </ul>
             </div>`,
                 });
