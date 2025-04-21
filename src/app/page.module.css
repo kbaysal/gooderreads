@@ -256,6 +256,11 @@
   border-color: #5576eb;
 }
 
+.collapse :global(.ant-collapse-content-box) {
+  height: 45vh;
+  overflow: scroll;
+}
+
 .collapse .pageLoading {
   height: 100px;
   align-content: center;
