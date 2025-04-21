@@ -239,9 +239,35 @@
   align-items: baseline;
   gap: 4px;
 }
-.red {
-  color: #F5222D;
+
+.collapse:first-child {
+  margin-bottom: 24px;
 }
+
+.collapse:first-child,
+.collapse:first-child> *:first-child,
+.collapse:first-child :global(.ant-collapse-content) {
+  border-color: #14a5f9;
+}
+
+.collapse:last-child,
+.collapse:last-child > *:first-child,
+.collapse:last-child :global(.ant-collapse-content) {
+  border-color: #5576eb;
+}
+
+.collapse .pageLoading {
+  height: 100px;
+  align-content: center;
+  grid-column: 1 / -1;
+}
+
+.collapseTitle {
+  display: flex;
+  gap: 8px;
+  font-weight: 600;
+}
+
 
 @media screen and (max-width: 700px) {
   .page {

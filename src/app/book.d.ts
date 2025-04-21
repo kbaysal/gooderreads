@@ -24,3 +24,10 @@ interface Book {
 interface BookResponse {
     items: Book[];
 }
+
+interface BookError {
+    error: {
+        code: number;
+        message: string;
+    }
+}

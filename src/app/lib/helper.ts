@@ -1,3 +1,4 @@
+import { addBook, getBook } from "../hooks/booksCache";
 
 export enum Format {
     Physical = 0,
@@ -10,6 +11,14 @@ export enum Shelf {
     READING = "READING",
     READ = "READ",
     DNF = "DNF"
+}
+
+export enum Todo {
+    None = -1,
+    OverdueToRead = 0,
+    UpcomingToRead = 1,
+    OverdueToReview = 2,
+    UpcomingToReview = 3
 }
 
 export const mobileThreshold = 700;
@@ -25,14 +34,27 @@ export const bookEntry = (userId: string, bookId: string, releaseDateG?: string)
     `;
 }
 
-export const getBooks = (bookIds: string[]): Promise<Book[] | never[]> => {
+export const getBooks = (bookIds: string[]): Promise<Book[] | BookError[] | never[]> => {
     return Promise.all(
-        bookIds.map((id: string) => fetch(`https://www.googleapis.com/books/v1/volumes/${id}`))
+        bookIds.map((id: string) => {
+            const book = getBook(id);
+            if (!book) {
+                return fetch(`https://www.googleapis.com/books/v1/volumes/${id}?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA`);
+            }
+
+            return book;
+        })
     ).then((responses) => {
         return Promise.all(responses.map(
-            async (response): Promise<Book> => { return await response.json()} 
+            async (response): Promise<Book> => {
+                const book = await (response as Response).json ? (response as Response).json() : response;
+                addBook(book as Book);
+                return book;
+            }
         )).then(
-            (value) => {return (value as Book[])}
-        ).catch(() => {return [];})
-    }).catch((reason) => {console.log(reason); return [];});
+            (value) => {
+                return (value as Book[]);
+            }
+        ).catch(() => { return []; })
+    }).catch((reason) => { console.log(reason); return []; });
 }

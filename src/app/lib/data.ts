@@ -1,7 +1,8 @@
 'use server';
 
 import { neon } from '@neondatabase/serverless';
-import { bookEntry, Format, Shelf } from './helper';
+import { bookEntry, Format, Shelf, Todo } from './helper';
+import dayjs from 'dayjs';
 
 export interface firstLookup {
     id: number;
@@ -12,6 +13,7 @@ export interface firstLookup {
     arcoptional?: boolean;
     arcreviewed?: boolean;
     releasedate?: Date;
+    todo?: Todo;
 }
 
 export interface LabelFields {
@@ -50,7 +52,7 @@ export async function existsOnShelf(bookIds: string[], userId: string): Promise<
         WITH input_bookids(bookid) AS (
             VALUES ('${bookIds.join("'),('")}')),
         matched_books AS (
-            SELECT b.id AS id, b.bookid, b.formats
+            SELECT b.id AS id, b.bookid, b.formats, b.releaseDate, b.releasedateg
             FROM books b
             INNER JOIN input_bookids i ON i.bookid = b.bookid
         ),
@@ -59,6 +61,7 @@ export async function existsOnShelf(bookIds: string[], userId: string): Promise<
             m.bookid,
             m.formats,
             m.id,
+            COALESCE(m.releaseDate, m.releaseDateG) AS releaseDate,
             CASE
                 WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
                 WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
@@ -80,7 +83,7 @@ export async function existsOnShelf(bookIds: string[], userId: string): Promise<
     return response as firstLookup[];
 }
 
-export async function addToShelf(shelf: string, id: number, bookId: string, userId: string, startdate?: string, enddate?: string): Promise<number | null> {
+export async function addToShelf(shelf: string, id: number, bookId: string, userId: string, releaseDate?: string, startdate?: string, enddate?: string): Promise<number | null> {
     console.log("addtoshelf");
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -88,7 +91,7 @@ export async function addToShelf(shelf: string, id: number, bookId: string, user
     try {
         let idFromBooks = id;
         if (!idFromBooks) {
-            const idFromBooksResults = await sql.query(bookEntry(userId, bookId));
+            const idFromBooksResults = await sql.query(bookEntry(userId, bookId, releaseDate));
             idFromBooks = idFromBooksResults[0]?.id;
         }
         const query = `UPDATE bookUsers
@@ -188,7 +191,12 @@ export async function getBooksFromShelf(shelf: Shelf, userId: string): Promise<f
     console.log("getbooksfromshelf");
     const sql = neon(`${process.env.DATABASE_URL}`);
     const response = await sql.query(`
-        SELECT b.bookid, b.id, b.formats, '${shelf}' AS shelf
+        SELECT 
+            b.bookid, 
+            b.id, 
+            b.formats, 
+            '${shelf}' AS shelf,
+            COALESCE(b.releaseDate, b.releaseDateG) AS releaseDate
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE b.id = ANY((u.shelves).${shelf})
@@ -212,7 +220,7 @@ export async function updateBook(data: BookData): Promise<void> {
 
     Object.keys(data).map(
         (field: string) => {
-            if(data[field as BookDataKeyType] !== undefined) {
+            if (data[field as BookDataKeyType] !== undefined) {
                 fields.push(`${field} = $${i++}`);
                 values.push(data[field as BookDataKeyType]);
             }
@@ -327,7 +335,7 @@ export const getARCTBR = async (userId: string, name?: string): Promise<firstLoo
             b.arc,
             b.arcoptional,
             b.arcreviewed,
-            b.releaseDate
+            COALESCE(b.releaseDate, b.releaseDateG) AS releaseDate
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE (b.id = ANY((u.shelves).TBR) OR b.id = ANY((u.shelves).READING) OR (b.id = ANY((u.shelves).READ) AND (arcreviewed IS NULL OR arcreviewed = FALSE)))
@@ -337,13 +345,34 @@ export const getARCTBR = async (userId: string, name?: string): Promise<firstLoo
 
     const sql = neon(`${process.env.DATABASE_URL}`);
     try {
-        console.log("qqqqq", query);
-        const response = await sql.query(query);
-        console.log(response);
-        console.log(typeof response[0]);
-        return response as firstLookup[];
+        const response = await sql.query(query) as firstLookup[];
+        response.sort(todoSort);
+        return response.map(
+            (book: firstLookup) => {
+                const overdueBook = isOverdue(book.releasedate as Date);
+                if (book.shelf === Shelf.READ) {
+                    book.todo = overdueBook ? Todo.OverdueToReview : Todo.UpcomingToReview;
+                } else {
+                    book.todo = overdueBook ? Todo.OverdueToRead : Todo.UpcomingToRead;
+                }
+
+                return book;
+            }
+        ) as firstLookup[];
     } catch (e) {
         console.log(e);
         return [];
     }
+}
+
+const todoSort = (a: firstLookup, b: firstLookup) =>
+  (a.releasedate?.valueOf() || 0) - (b.releasedate?.valueOf() || 0);
+
+const twoWeeksAgo = dayjs().subtract(2, 'week');
+const isOverdue = (releaseDate: Date) => {
+    if (dayjs(releaseDate).isBefore(twoWeeksAgo)) {
+        return true;
+    }
+
+    return false;
 }

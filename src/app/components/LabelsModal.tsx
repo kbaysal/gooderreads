@@ -11,7 +11,7 @@ import styles from "../styles/labels.module.css";
 import { Formats } from "./FormatButtons";
 import { DefaultOptionType } from "antd/es/select";
 import { useAuth } from "@clerk/nextjs";
-import { useIsMobile } from "../hooks";
+import { useIsMobile } from "../hooks/useWindowDimension";
 
 interface LabelsModalProps {
     isOpen: boolean;

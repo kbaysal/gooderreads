@@ -4,7 +4,7 @@ import { IconBook, IconBook2, IconBookmark, IconInfoHexagon, IconPlus, IconTag, 
 import { Button, Dropdown, MenuProps, Popover, Tag, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useIsMobile } from "../hooks";
+import { useIsMobile } from "../hooks/useWindowDimension";
 import { addToShelf, firstLookup, removeFromShelf } from "../lib/data";
 import { Format, Shelf } from "../lib/helper";
 import styles from "../page.module.css";
@@ -80,6 +80,7 @@ export const BookRow = (props: BookRowProps) => {
                     props.firstState?.id,
                     props.book?.id,
                     userId as string,
+                    props.book?.volumeInfo.publishedDate,
                     shelf === Shelf.READING ? dayjs().format(dateFormat) : undefined,
                     shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined,
                 );
@@ -186,11 +187,9 @@ export const BookRow = (props: BookRowProps) => {
                     </Popover>
                 </div>
                 <div className={styles.author}>{bookInfo.authors?.join(", ")}</div>
-                {props.showLabels?.length &&
-                    <div className={styles.tags}>
-                        {props.showLabels.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
-                    </div>
-                }
+                <div className={styles.tags}>
+                    {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
+                </div>
                 <div className={styles.metadata}>
                     <span>{bookInfo.pageCount}p</span>
                     <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}</span>

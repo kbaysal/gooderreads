@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { mobileThreshold } from "./lib/helper";
+import { mobileThreshold } from "../lib/helper";
 
 export function useWindowDimensions(): { width: number; height: number} {
     const [width, setWidth] = useState(window.innerWidth);

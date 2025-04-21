@@ -1,77 +1,72 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { Collapse, CollapseProps, Spin } from 'antd';
-import { KeyboardEvent, useCallback, useEffect, useState } from "react";
+import { KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from "react";
 import { BookRow } from './components/BookRow';
 import Header from './components/Header';
+import { addBook } from './hooks/booksCache';
 import { existsOnShelf, firstLookup, getARCTBR } from "./lib/data";
-import { getBooks, Shelf } from './lib/helper';
+import { getBooks, Todo } from './lib/helper';
 import styles from "./page.module.css";
-import { useAuth, useUser } from '@clerk/nextjs';
-import dayjs from 'dayjs';
+import { IconEyeglass2, IconWriting } from '@tabler/icons-react';
 
-const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?maxResults=20&printType=books&q=";
+const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
 
-const todoSort = (a: Book, b: Book) =>
-  (a.volumeInfo?.publishedDateOverride?.valueOf() || new Date(a.volumeInfo?.publishedDate).valueOf()) -
-  (b.volumeInfo?.publishedDateOverride?.valueOf() || new Date(b.volumeInfo?.publishedDate).valueOf());
-
+const collapsedStyles = [
+  { header: { background: "#2baefa08", color: "#2baefa" } },
+  { header: { background: "#4395f308", color: "#4395f3" } },
+  { header: { background: "#5576eb08", color: "#5576eb" } },
+  { header: { background: "#6058e208", color: "#6058e2" } }
+];
 export default function Home() {
   const [books, setBooks] = useState<Book[]>();
   const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
   const [existingShelfLoading, setExistingShelfLoading] = useState(false);
-  const [todoOverdue, setTodoOverdue] = useState<Book[]>();
-  const [todoUpcoming, setTodoUpcoming] = useState<Book[]>();
-  const [todoReview, setTodoReview] = useState<Book[]>();
+  const [todoIds, setTodoIds] = useState<string[][]>();
+  const [todoBooks, setTodoBooks] = useState<Book[][]>([]);
   const [todoFirstState, setTodoFirstState] = useState<Map<string, firstLookup>>();
   const { userId } = useAuth();
   const { user } = useUser();
+  const requestsMade = useRef(false);
 
   useEffect(
     () => {
       console.log("user", user, "userId", userId);
-      if (user && userId) {
+      if (user && userId && !requestsMade.current) {
         const recent = true; //(new Date().valueOf() - (user.createdAt as Date).valueOf()) < 60000
         console.log("user created", user.createdAt, (new Date().valueOf() - (user.createdAt as Date).valueOf()) < 6000000);
+        requestsMade.current = true;
         getARCTBR(userId, recent ? (user.fullName as string) : undefined).then(
           (response) => {
             console.log(response);
             if (response?.length > 0) {
               const todoState = new Map<string, firstLookup>();
-              const bookIds = response.map((book) => {
+              const todoExpiredNew: string[] = [];
+              const todoComingNew: string[] = [];
+              const todoReviewExpiredNew: string[] = [];
+              const todoReviewComingNew: string[] = [];
+              response.forEach((book) => {
+                switch (book.todo) {
+                  case Todo.OverdueToRead:
+                    todoExpiredNew.push(book.bookid);
+                    break;
+                  case Todo.UpcomingToRead:
+                    todoComingNew.push(book.bookid);
+                    break;
+                  case Todo.OverdueToReview:
+                    todoReviewExpiredNew.push(book.bookid);
+                    break;
+                  case Todo.UpcomingToReview:
+                    todoReviewComingNew.push(book.bookid);
+                    break;
+                }
                 todoState.set(book.bookid, book);
                 return book.bookid;
               })
               setTodoFirstState(todoState);
-              getBooks(bookIds).then(
-                (todoBooks) => {
-                  todoBooks.map(todoBook => todoBook.volumeInfo.publishedDateOverride = todoState.get(todoBook.id)?.releasedate);
-                  todoBooks = todoBooks.sort(todoSort);
-                  const todoExpiredNew: Book[] = [];
-                  const todoComingNew: Book[] = [];
-                  const todoReviewNew: Book[] = [];
-                  const twoWeeksAgo = dayjs().subtract(2, 'week');
-                  todoBooks.forEach(
-                    (book) => {
-                      if (todoState.get(book.id)?.shelf === Shelf.READ) {
-                        todoReviewNew.push(book);
-                      }
-                      else {
-                        const releaseDate = book.volumeInfo.publishedDateOverride || book.volumeInfo.publishedDate;
-                        if (dayjs(releaseDate).isBefore(twoWeeksAgo)) {
-                          todoExpiredNew.push(book);
-                        } else {
-                          todoComingNew.push(book);
-                        }
-                      }
-                    }
-                  )
-                  setTodoOverdue(todoExpiredNew);
-                  setTodoUpcoming(todoComingNew);
-                  setTodoReview(todoReviewNew);
-                }
-              )
+              setTodoIds([todoExpiredNew, todoComingNew, todoReviewExpiredNew, todoReviewComingNew]);
             }
           }
         )
@@ -101,6 +96,7 @@ export default function Home() {
           if (result?.items?.length > 0) {
             result.items = result.items.filter((book) => {
               if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
+                addBook(book);
                 resultSet.set(book.id, book);
                 return true;
               }
@@ -129,34 +125,88 @@ export default function Home() {
 
   console.log(books, existingShelfLoading);
 
-  const items: CollapseProps['items'] = [
+  const toReadItems: CollapseProps['items'] = [
     {
-      key: '1',
-      label: `Overdue (${todoOverdue?.length || 0})`,
-      children: <TodoSection todolist={todoOverdue} todoFirstState={todoFirstState} updateId={updateId} />,
+      key: Todo.OverdueToRead,
+      styles: collapsedStyles[Todo.OverdueToRead],
+      label: (
+        <div className={styles.collapseTitle}>
+          <IconEyeglass2 />
+          <span>{`To read - Overdue (${todoIds?.[Todo.OverdueToRead].length || 0})`}</span>
+        </div>
+      ),
+      children: <TodoSection todolist={todoBooks?.[Todo.OverdueToRead]} todoFirstState={todoFirstState} updateId={updateId} />,
     },
     {
-      key: '2',
-      label: `Upcoming (${todoUpcoming?.length || 0})`,
-      children: <TodoSection todolist={todoUpcoming} todoFirstState={todoFirstState} updateId={updateId} />,
+      key: Todo.UpcomingToRead,
+      styles: collapsedStyles[Todo.UpcomingToRead],
+      label: (
+        <div className={styles.collapseTitle}>
+          <IconEyeglass2 />
+          {`To read - Upcoming (${todoIds?.[Todo.UpcomingToRead].length || 0})`}
+        </div>
+      ),
+      children: <TodoSection todolist={todoBooks?.[Todo.UpcomingToRead]} todoFirstState={todoFirstState} updateId={updateId} />,
+    }
+  ];
+
+  const toReviewItems: CollapseProps['items'] = [
+    {
+      key: Todo.OverdueToReview,
+      styles: collapsedStyles[Todo.OverdueToReview],
+      label: (
+        <div className={styles.collapseTitle}>
+          <IconWriting />
+          {`To review - Overdue (${todoIds?.[Todo.OverdueToReview].length || 0})`}
+        </div>
+      ),
+      children: <TodoSection todolist={todoBooks?.[Todo.OverdueToReview]} todoFirstState={todoFirstState} updateId={updateId} />,
     },
     {
-      key: '3',
-      label: `To rate (${todoReview?.length || 0})`,
-      children: <TodoSection todolist={todoReview} todoFirstState={todoFirstState} updateId={updateId} />,
+      key: Todo.UpcomingToReview,
+      styles: collapsedStyles[Todo.UpcomingToReview],
+      label: (
+        <div className={styles.collapseTitle}>
+          <IconWriting />
+          {`To review - Upcoming (${todoIds?.[Todo.UpcomingToReview].length || 0})`}
+        </div>
+      ),
+      children: <TodoSection todolist={todoBooks?.[Todo.UpcomingToReview]} todoFirstState={todoFirstState} updateId={updateId} />,
     },
   ];
+
+  // the last one in the array is the one that was last updated
+  const collapseChange = useCallback(
+    async (keys: string[]) => {
+      if (keys.length > 0) {
+        const todo = (keys[keys.length - 1] as unknown) as Todo;
+        if (!todoBooks[todo]) {
+          const books = await getBooks((todoIds as string[][])[todo]);
+          if (!(books?.[0] as BookError).error) {
+            const newTodoBooks = [...todoBooks];
+            newTodoBooks[todo] = books as Book[];
+            setTodoBooks(newTodoBooks);
+
+          }
+        }
+      }
+    },
+    [todoBooks, todoIds]
+  );
 
   return (
     <div className={styles.page}>
       <Header onEnter={onEnter} />
-      {todoOverdue && todoUpcoming && !books && !existingShelfLoading &&
+      {todoIds && !books && !existingShelfLoading &&
         <>
-          <div className={styles.todoTitle}><h3>TODO:</h3></div>
-          <Collapse ghost items={items} />
+          <h3 className={styles.todoTitle}>State of the ARCs:</h3>
+          <div>
+            <Collapse items={toReadItems} onChange={collapseChange} className={styles.collapse} />
+            <Collapse items={toReviewItems} onChange={collapseChange} className={styles.collapse} />
+          </div>
         </>
       }
-      {existingShelfLoading && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
+      {existingShelfLoading && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
       {books && !existingShelfLoading &&
         <div className={styles.bookResults}>
           {books.map(
@@ -171,9 +221,11 @@ export default function Home() {
   );
 }
 
-const TodoSection = (props: { todolist: Book[] | undefined, todoFirstState: Map<string, firstLookup> | undefined, updateId: (id: number, bookId: string) => void }) => {
+const TodoSection = memo(function todosection(props: { todolist: Book[] | undefined, todoFirstState: Map<string, firstLookup> | undefined, updateId: (id: number, bookId: string) => void }) {
   const { todolist, todoFirstState, updateId } = props;
+  console.log("TODOSECTUON", todolist)
   return <div className={styles.bookResults}>
+    {!todolist && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
     {todolist?.map(
       (book) => {
         const firstState = todoFirstState?.get(book.id);
@@ -187,7 +239,6 @@ const TodoSection = (props: { todolist: Book[] | undefined, todoFirstState: Map<
         if (firstState?.arc) {
           arcLabels.push(...firstState?.arc);
         }
-        console.log(firstState);
         return (
           <BookRow
             book={book}
@@ -200,5 +251,4 @@ const TodoSection = (props: { todolist: Book[] | undefined, todoFirstState: Map<
       }
     )}
   </div>
-
-}
+});
