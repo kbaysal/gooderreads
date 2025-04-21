@@ -52,6 +52,8 @@ export interface EmailInfo {
     title: string;
     author: string;
     releasedate: Date;
+    shelf: Shelf;
+    reviewdone: boolean;
 }
 
 export async function existsOnShelf(bookIds: string[], userId: string): Promise<firstLookup[]> {
@@ -328,7 +330,15 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
             bi.author,
             u.name,
             u.email,
-            COALESCE(b.releaseDate, b.releaseDateG) AS releasedate
+            b.arcreviewed AS reviewdone
+            COALESCE(b.releaseDate, b.releaseDateG) AS releasedate,
+            CASE
+                WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
+                WHEN b.id = ANY((u.shelves).READING) THEN 'READING'
+                WHEN b.id = ANY((u.shelves).READ) THEN 'READ'
+                WHEN b.id = ANY((u.shelves).DNF) THEN 'DNF'
+                ELSE NULL
+            END AS shelf
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         JOIN bookinfo bi ON bi.id = b.bookid

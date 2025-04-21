@@ -6,14 +6,13 @@ import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks/useWindowDimension";
 import { addToShelf, firstLookup, removeFromShelf } from "../lib/data";
-import { Format, Shelf } from "../lib/helper";
+import { dateFormat, Format, Shelf } from "../lib/helper";
 import styles from "../page.module.css";
 import { Formats } from "./FormatButtons";
 import { LabelsModal } from "./LabelsModal";
 import { useAuth } from "@clerk/nextjs";
 
 const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
-const dateFormat = 'YYYY-MM-DD';
 
 interface BookRowProps {
     book: Book;

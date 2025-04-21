@@ -13,6 +13,13 @@ export enum Shelf {
     DNF = "DNF"
 }
 
+export enum ShelfPriority {
+    TBR = 0,
+    READING = 1,
+    READ = 2,
+    DNF = 3
+}
+
 export enum Todo {
     None = -1,
     OverdueToRead = 0,
@@ -22,6 +29,7 @@ export enum Todo {
 }
 
 export const mobileThreshold = 700;
+export const dateFormat = 'YYYY-MM-DD';
 
 export const bookEntry = (userId: string, bookId: string, releaseDateG?: string) => {
     console.log("book entry ")
