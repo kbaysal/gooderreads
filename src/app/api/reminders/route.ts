@@ -38,12 +38,12 @@ export async function GET(request: Request) {
                     subject: "You have ARCs releasing in a week!",
                     html: `
                         <div>
-                            <h3>Hi, ${emailInfoArray?.[0]?.name}!</h3>
+                            <h3>Hi, ${emailInfoArray?.[0]?.title}!</h3>
                             <p>These books are publishing within a week!</p>
                             <ul>
                                 ${emailInfoArray?.map((val) => `
                                     <li>
-                                        <bold>${val.releaseDate}</bold>
+                                        <bold>${val.releasedate}</bold>
                                         ${val.name} by ${val.author}
                                     </li>`).join('')}
                             </ul>

@@ -51,7 +51,7 @@ export interface EmailInfo {
     name: string;
     title: string;
     author: string;
-    releaseDate: Date;
+    releasedate: Date;
 }
 
 export async function existsOnShelf(bookIds: string[], userId: string): Promise<firstLookup[]> {
