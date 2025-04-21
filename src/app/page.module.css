@@ -257,7 +257,7 @@
 }
 
 .collapse :global(.ant-collapse-content-box) {
-  height: 45vh;
+  max-height: 45vh;
   overflow: scroll;
 }
 

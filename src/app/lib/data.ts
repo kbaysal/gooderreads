@@ -45,6 +45,12 @@ export interface BookData extends LabelFields {
     releasedate?: string;
 }
 
+export interface EmailInfo {
+    bookid: string;
+    email: string;
+    name: string;
+}
+
 export async function existsOnShelf(bookIds: string[], userId: string): Promise<firstLookup[]> {
     console.log("existsonshelf");
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -290,6 +296,30 @@ export const getLabels = async (userId: string): Promise<LabelFields[]> => {
         const response = await sql.query(query);
         console.log(response);
         return response as LabelFields[];
+    } catch (e) {
+        console.log(e);
+        return [];
+    }
+}
+
+export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
+    console.log("getUpcomingBooks");
+    const query = `
+        SELECT 
+            b.bookId,
+            u.name,
+            u.email
+        FROM books b
+        JOIN bookUsers u ON u.id = b.userid
+        WHERE COALESCE(b.releaseDate, b.releaseDateG) 
+            BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days';
+    `;
+
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    try {
+        const response = await sql.query(query);
+        console.log(response);
+        return response as EmailInfo[];
     } catch (e) {
         console.log(e);
         return [];
