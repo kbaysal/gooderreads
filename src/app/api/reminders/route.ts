@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     results.forEach(
         (row) => {
             const emails = emailData.get(row.email) || [];
+            emails.push(row);
             emailData.set(row.email, emails);
         }
     )
@@ -29,10 +30,10 @@ export async function GET(request: Request) {
         Array.from(emailData.entries()).map(
             (data) => {
                 const [email, emailInfoArray] = data;
-console.log(data);
-console.log(email);
-console.log(emailInfoArray);
-console.log(`
+                console.log(data);
+                console.log(email);
+                console.log(emailInfoArray);
+                console.log(`
             <div>
             <h3>Hi, ${emailInfoArray?.[0]?.name}!</h3>
             <p>These books are publishing within a week!</p>
