@@ -330,7 +330,7 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
             bi.author,
             u.name,
             u.email,
-            b.arcreviewed AS reviewdone
+            b.arcreviewed AS reviewdone,
             COALESCE(b.releaseDate, b.releaseDateG) AS releasedate,
             CASE
                 WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
