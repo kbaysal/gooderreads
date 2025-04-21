@@ -14,7 +14,7 @@ export default function ShelfView(props: {shelf: Shelf}) {
     const [books, setBooks] = useState<Book[]>();
     const [summarizedBookInfo, setSummarizedBookInfo]= useState<firstLookup[]>();
     const { userId } = useAuth();
-    
+
     useEffect(
         () => {
             if(userId){
@@ -25,7 +25,9 @@ export default function ShelfView(props: {shelf: Shelf}) {
                         setSummarizedBookInfo(response);
                         getBooks(bookIds).then((results) => {
                             console.log("results", results);
-                            setBooks(results);
+                            if ((results?.[0] as Book).id && (results?.[0] as Book).volumeInfo) {
+                                setBooks(results as Book[]);
+                            }
                         });
                     }
                 );
