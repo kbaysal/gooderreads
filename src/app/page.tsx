@@ -35,10 +35,11 @@ export default function Home() {
     () => {
       console.log("user", user, "userId", userId);
       if (user && userId && !requestsMade.current) {
-        const recent = true; //(new Date().valueOf() - (user.createdAt as Date).valueOf()) < 60000
+        const recent = (new Date().valueOf() - (user.createdAt as Date).valueOf()) < 60000
         console.log("user created", user.createdAt, (new Date().valueOf() - (user.createdAt as Date).valueOf()) < 6000000);
         requestsMade.current = true;
-        getARCTBR(userId, recent ? (user.fullName as string) : undefined).then(
+        console.log("email:", user.primaryEmailAddress?.emailAddress);
+        getARCTBR(userId, recent ? (user.fullName as string) : undefined, user.primaryEmailAddress?.emailAddress).then(
           (response) => {
             console.log(response);
             if (response?.length > 0) {

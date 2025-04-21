@@ -326,11 +326,11 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
     }
 }
 
-export const createUser = async (userId: string, name: string): Promise<boolean> => {
+export const createUser = async (userId: string, name: string, email: string): Promise<boolean> => {
     console.log("createuser");
     const query = `
-        INSERT INTO bookUsers (id, name)
-        VALUES ('${userId}', '${name}')
+        INSERT INTO bookUsers (id, name, email)
+        VALUES ('${userId}', '${name}', '${email}')
         ON CONFLICT (id) DO NOTHING;
     `;
 
@@ -346,10 +346,10 @@ export const createUser = async (userId: string, name: string): Promise<boolean>
     }
 }
 
-export const getARCTBR = async (userId: string, name?: string): Promise<firstLookup[]> => {
+export const getARCTBR = async (userId: string, name?: string, email?: string): Promise<firstLookup[]> => {
     console.log("getARCTBR");
-    if (name) {
-        await createUser(userId, name);
+    if (name && email) {
+        await createUser(userId, name, email);
     }
 
     const query = `
