@@ -312,7 +312,7 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE COALESCE(b.releaseDate, b.releaseDateG) 
-            BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '7 days';
+            BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '21 days';
     `;
 
     const sql = neon(`${process.env.DATABASE_URL}`);
