@@ -29,6 +29,17 @@ export async function GET(request: Request) {
         Array.from(emailData.entries()).map(
             (data) => {
                 const [email, emailInfoArray] = data;
+console.log(data);
+console.log(email);
+console.log(emailInfoArray);
+console.log(`
+            <div>
+            <h3>Hi, ${emailInfoArray?.[0]?.name}!</h3>
+            <p>These books are publishing within a week!</p>
+            <ul>
+                ${emailInfoArray?.map((val) => `<li>${val.bookid}</li>`).join('')}
+            </ul>
+            </div>`);
                 resend.emails.send({
                     from: 'Gooderreads <onboarding@resend.dev>',
                     to: [email],
