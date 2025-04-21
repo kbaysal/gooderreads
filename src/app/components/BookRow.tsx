@@ -80,7 +80,12 @@ export const BookRow = (props: BookRowProps) => {
                     props.firstState?.id,
                     props.book?.id,
                     userId as string,
-                    props.book?.volumeInfo.publishedDate,
+                    bookInfo.title,
+                    bookInfo.authors.join(", "),
+                    bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail,
+                    bookInfo.pageCount,
+                    bookInfo.publisher,
+                    bookInfo.publishedDate,
                     shelf === Shelf.READING ? dayjs().format(dateFormat) : undefined,
                     shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined,
                 );
@@ -191,7 +196,7 @@ export const BookRow = (props: BookRowProps) => {
                     {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
                 </div>
                 <div className={styles.metadata}>
-                    <span>{bookInfo.pageCount}p</span>
+                    {bookInfo.pageCount && <span>{bookInfo.pageCount}p</span>}
                     <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}</span>
                     <span>{bookInfo.publisher}</span>
                     <span>{props.book.saleInfo.country}</span>

@@ -49,6 +49,9 @@ export interface EmailInfo {
     bookid: string;
     email: string;
     name: string;
+    title: string;
+    author: string;
+    releaseDate: Date;
 }
 
 export async function existsOnShelf(bookIds: string[], userId: string): Promise<firstLookup[]> {
@@ -89,7 +92,20 @@ export async function existsOnShelf(bookIds: string[], userId: string): Promise<
     return response as firstLookup[];
 }
 
-export async function addToShelf(shelf: string, id: number, bookId: string, userId: string, releaseDate?: string, startdate?: string, enddate?: string): Promise<number | null> {
+export async function addToShelf(
+    shelf: string,
+    id: number,
+    bookId: string,
+    userId: string,
+    title: string,
+    author: string,
+    thumbnail: string,
+    pages?: number,
+    publisher?: string,
+    releaseDate?: string,
+    startdate?: string,
+    enddate?: string
+): Promise<number | null> {
     console.log("addtoshelf");
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -100,6 +116,7 @@ export async function addToShelf(shelf: string, id: number, bookId: string, user
             const idFromBooksResults = await sql.query(bookEntry(userId, bookId, releaseDate));
             idFromBooks = idFromBooksResults[0]?.id;
         }
+        createBook(bookId, title, author, thumbnail, pages, publisher);
         const query = `UPDATE bookUsers
             SET shelves = ROW(
                 (shelves).TBR${shelf === Shelf.TBR ? ` || ${idFromBooks}` : ""},
@@ -307,10 +324,14 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
     const query = `
         SELECT 
             b.bookId,
+            bi.title,
+            bi.author,
             u.name,
-            u.email
+            u.email,
+            COALESCE(b.releaseDate, b.releaseDateG) AS releasedate
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
+        JOIN bookinfo bi ON bi.id = b.bookid
         WHERE COALESCE(b.releaseDate, b.releaseDateG) 
             BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '21 days';
     `;
@@ -323,6 +344,44 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
     } catch (e) {
         console.log(e);
         return [];
+    }
+}
+
+export const createBook = async (id: string, title: string, author: string, thumbnail: string, pages?: number, publisher?: string) => {
+    console.log("create book");
+    title = title.replaceAll("'", "''");
+    author = author.replaceAll("'", "''");
+    thumbnail = thumbnail.replaceAll("'", "''");
+    publisher = publisher?.replaceAll("'", "''");
+    try {
+        const query = `
+            INSERT INTO bookinfo (id, title, author, thumbnail, pages, publisher)
+            VALUES ('${id}', '${title}', '${author}', '${thumbnail}', ${pages ?? null}, ${publisher ? `'${publisher}'` : null})
+            ON CONFLICT (id) DO NOTHING;
+        `;
+        console.log(query);
+        const sql = neon(`${process.env.DATABASE_URL}`);
+        await sql.query(query);
+        return true;
+    } catch (error) {
+        console.error('Error inserting into bookinfo:', error);
+        throw error;
+    }
+}
+
+export const getBookInfo = async (bookIds: string[]): Promise<SimplifiedBook[]> => {
+    try {
+        const query = `
+        SELECT * FROM bookinfo
+        WHERE id = ANY($1);
+    `;
+        console.log(query);
+        const sql = neon(`${process.env.DATABASE_URL}`);
+        const result = await sql.query(query, bookIds);
+        return result as SimplifiedBook[];
+    } catch (error) {
+        console.error('Error inserting into bookinfo:', error);
+        throw error;
     }
 }
 
@@ -396,7 +455,7 @@ export const getARCTBR = async (userId: string, name?: string, email?: string): 
 }
 
 const todoSort = (a: firstLookup, b: firstLookup) =>
-  (a.releasedate?.valueOf() || 0) - (b.releasedate?.valueOf() || 0);
+    (a.releasedate?.valueOf() || 0) - (b.releasedate?.valueOf() || 0);
 
 const twoWeeksAgo = dayjs().subtract(2, 'week');
 const isOverdue = (releaseDate: Date) => {

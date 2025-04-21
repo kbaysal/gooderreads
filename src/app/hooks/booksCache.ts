@@ -13,7 +13,3 @@ export function setPubDateOverride(book: Book, pubdate: Date) {
 export function getBook(id: string) {
     return books.get(id);
 }
-
-export function getBooks() {
-    return books;
-}

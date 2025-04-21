@@ -31,3 +31,12 @@ interface BookError {
         message: string;
     }
 }
+
+interface SimplifiedBook {
+    id: Book["id"];
+    authors: string;
+    title: Book["volumeInfo"]["title"];
+    thumbnail: Book["volumeInfo"]["imageLinks"]["smallThumbnail"];
+    pages: Book["volumeInfo"]["pageCount"];
+    publisher: Book["volumeInfo"]["publisher"];
+}

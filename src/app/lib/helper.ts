@@ -34,7 +34,7 @@ export const bookEntry = (userId: string, bookId: string, releaseDateG?: string)
     `;
 }
 
-export const getBooks = (bookIds: string[]): Promise<Book[] | BookError[] | never[]> => {
+export const getBooks = async (bookIds: string[]): Promise<Book[] | BookError[] | never[]> => {
     return Promise.all(
         bookIds.map((id: string) => {
             const book = getBook(id);

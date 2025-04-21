@@ -10,14 +10,14 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { BookRow } from "./BookRow";
 import { useAuth } from "@clerk/nextjs";
 
-export default function ShelfView(props: {shelf: Shelf}) {
+export default function ShelfView(props: { shelf: Shelf }) {
     const [books, setBooks] = useState<Book[]>();
-    const [summarizedBookInfo, setSummarizedBookInfo]= useState<firstLookup[]>();
+    const [summarizedBookInfo, setSummarizedBookInfo] = useState<firstLookup[]>();
     const { userId } = useAuth();
 
     useEffect(
         () => {
-            if(userId){
+            if (userId) {
                 getBooksFromShelf(props.shelf, userId).then(
                     (response) => {
                         console.log(response);
@@ -39,6 +39,7 @@ export default function ShelfView(props: {shelf: Shelf}) {
     return (
         <div className={styles.page}>
             <Header />
+            <h3 className={styles.todoTitle}>{props.shelf}{books ? `(${books.length})` : ""}:</h3>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
             {books &&
                 <div className={styles.bookResults}>
