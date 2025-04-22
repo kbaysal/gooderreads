@@ -11,8 +11,6 @@ import { firstLookup, getARCTBR } from "./lib/data";
 import { getBooks, Todo } from './lib/helper';
 import styles from "./page.module.css";
 
-export const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
-
 const collapsedStyles = [
   { header: { background: "#2baefa08", color: "#2baefa" } },
   { header: { background: "#4395f308", color: "#4395f3" } },
