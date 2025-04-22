@@ -8,8 +8,9 @@ import { BookRow } from '../components/BookRow';
 import Header from '../components/Header';
 import { addBook } from '../hooks/booksCache';
 import { existsOnShelf, firstLookup } from '../lib/data';
-import { googleURLForTitle } from '../page';
 import styles from "../page.module.css";
+
+const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
 
 export default function Search(props: {
     searchParams: { [key: string]: string }
