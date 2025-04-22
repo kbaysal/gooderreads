@@ -3,7 +3,7 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '@clerk/nextjs';
 import { Spin } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { BookRow } from '../components/BookRow';
 import Header from '../components/Header';
 import { addBook } from '../hooks/booksCache';
@@ -13,14 +13,14 @@ import styles from "../page.module.css";
 const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
 
 export default function Search(props: {
-    searchParams: { [key: string]: string }
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
     const [books, setBooks] = useState<Book[]>();
     const [existingShelfLoading, setExistingShelfLoading] = useState(false);
     const { userId } = useAuth();
 
-    const q = props.searchParams.q;
+    const q = use(props.searchParams)?.q as string;
 
     useEffect(
         () => {
