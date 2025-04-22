@@ -172,18 +172,18 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .bookTitle {
   font-size: 18px;
   line-height: 20px;
   font-family: Cochin, Georgia, Times, 'Times New Roman', serif;
-  display: flex;
-  align-items: center;
 }
 
 .bookTitle svg {
-  margin-left: 8px;
+  margin-left: 4px;
+  vertical-align: sub;
 }
 
 .author {
@@ -200,10 +200,20 @@
 }
 
 .metadata {
-  display: grid;
-  grid-template-columns: max-content max-content max-content max-content;
+  display: flex;
   gap: 8px;
   color: rgb(80, 70, 70);
+}
+
+.metadata > * {
+  flex: 1 0 auto;
+}
+
+.publisher {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 0 1 auto;
 }
 
 .buttons {
@@ -295,5 +305,9 @@
 
   .buttons {
     width: 32px;
+  }
+
+  .page .collapse :global(.ant-collapse-content-box) {
+    padding: 12px;
   }
 }

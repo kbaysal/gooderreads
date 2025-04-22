@@ -11,8 +11,8 @@
        - [x] Show labels
        - [ ] Allow labels to be removed
        - [ ] Filter by to read/to review/all
-       - [ ] Collapsible lists
+       - [x] Collapsible lists
    - [ ] Use the bookinfo table for populating book info
    - [ ] New views with filters
-   - [ ] Move search to its own thing so that it can be on all pages
+   - [x] Move search to its own thing so that it can be on all pages
    - [ ] Graphs

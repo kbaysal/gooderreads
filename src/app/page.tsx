@@ -2,17 +2,16 @@
 
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth, useUser } from '@clerk/nextjs';
+import { IconEyeglass2, IconWriting } from '@tabler/icons-react';
 import { Collapse, CollapseProps, Spin } from 'antd';
-import { KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { BookRow } from './components/BookRow';
 import Header from './components/Header';
-import { addBook } from './hooks/booksCache';
-import { existsOnShelf, firstLookup, getARCTBR } from "./lib/data";
+import { firstLookup, getARCTBR } from "./lib/data";
 import { getBooks, Todo } from './lib/helper';
 import styles from "./page.module.css";
-import { IconEyeglass2, IconWriting } from '@tabler/icons-react';
 
-const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
+export const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
 
 const collapsedStyles = [
   { header: { background: "#2baefa08", color: "#2baefa" } },
@@ -21,9 +20,6 @@ const collapsedStyles = [
   { header: { background: "#6058e208", color: "#6058e2" } }
 ];
 export default function Home() {
-  const [books, setBooks] = useState<Book[]>();
-  const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
-  const [existingShelfLoading, setExistingShelfLoading] = useState(false);
   const [todoIds, setTodoIds] = useState<string[][]>();
   const [todoBooks, setTodoBooks] = useState<Book[][]>([]);
   const [todoFirstState, setTodoFirstState] = useState<Map<string, firstLookup>>();
@@ -76,56 +72,6 @@ export default function Home() {
     [user, userId]
   );
 
-  const updateId = useCallback(
-    (id: number, bookId: string) => {
-      const newExistingShelves = new Map(existingShelves);
-      newExistingShelves.set(bookId, { ...newExistingShelves.get(bookId) as firstLookup, id });
-      setExistingShelves(newExistingShelves);
-    },
-    [existingShelves]
-  )
-
-  const onEnter = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fetch(`${googleURLForTitle}${encodeURI((e.target as any).value)}`).then(
-        async (response) => {
-          setExistingShelfLoading(true);
-          const result: BookResponse = await response.json();
-          console.log(result);
-          const resultSet = new Map<string, Book>();
-          if (result?.items?.length > 0) {
-            result.items = result.items.filter((book) => {
-              if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
-                addBook(book);
-                resultSet.set(book.id, book);
-                return true;
-              }
-              return false;
-            });
-
-            setBooks(Array.from(resultSet.values()));
-
-            const shelfState = await existsOnShelf(result.items.map((book) => book.id), userId as string);
-            const shelfMap = new Map<string, firstLookup>();
-            shelfState.forEach(
-              (book) => {
-                shelfMap.set(book.bookid, book);
-              }
-            )
-            setExistingShelves(shelfMap);
-            setExistingShelfLoading(false);
-            console.log(shelfMap);
-            console.log("shelfstate", shelfState);
-          }
-        }
-      );
-    },
-    [userId]
-  );
-
-  console.log(books, existingShelfLoading);
-
   const toReadItems: CollapseProps['items'] = [
     {
       key: Todo.OverdueToRead,
@@ -136,7 +82,7 @@ export default function Home() {
           <span>{`To read - Overdue (${todoIds?.[Todo.OverdueToRead].length || 0})`}</span>
         </div>
       ),
-      children: <TodoSection todolist={todoBooks?.[Todo.OverdueToRead]} todoFirstState={todoFirstState} updateId={updateId} />,
+      children: <TodoSection todolist={todoBooks?.[Todo.OverdueToRead]} todoFirstState={todoFirstState} />,
     },
     {
       key: Todo.UpcomingToRead,
@@ -147,7 +93,7 @@ export default function Home() {
           {`To read - Upcoming (${todoIds?.[Todo.UpcomingToRead].length || 0})`}
         </div>
       ),
-      children: <TodoSection todolist={todoBooks?.[Todo.UpcomingToRead]} todoFirstState={todoFirstState} updateId={updateId} />,
+      children: <TodoSection todolist={todoBooks?.[Todo.UpcomingToRead]} todoFirstState={todoFirstState} />,
     }
   ];
 
@@ -161,7 +107,7 @@ export default function Home() {
           {`To review - Overdue (${todoIds?.[Todo.OverdueToReview].length || 0})`}
         </div>
       ),
-      children: <TodoSection todolist={todoBooks?.[Todo.OverdueToReview]} todoFirstState={todoFirstState} updateId={updateId} />,
+      children: <TodoSection todolist={todoBooks?.[Todo.OverdueToReview]} todoFirstState={todoFirstState} />,
     },
     {
       key: Todo.UpcomingToReview,
@@ -172,7 +118,7 @@ export default function Home() {
           {`To review - Upcoming (${todoIds?.[Todo.UpcomingToReview].length || 0})`}
         </div>
       ),
-      children: <TodoSection todolist={todoBooks?.[Todo.UpcomingToReview]} todoFirstState={todoFirstState} updateId={updateId} />,
+      children: <TodoSection todolist={todoBooks?.[Todo.UpcomingToReview]} todoFirstState={todoFirstState} />,
     },
   ];
 
@@ -197,8 +143,8 @@ export default function Home() {
 
   return (
     <div className={styles.page}>
-      <Header onEnter={onEnter} />
-      {todoIds && !books && !existingShelfLoading &&
+      <Header />
+      {todoIds &&
         <>
           <h3 className={styles.todoTitle}>State of the ARCs:</h3>
           <div>
@@ -207,23 +153,12 @@ export default function Home() {
           </div>
         </>
       }
-      {existingShelfLoading && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
-      {books && !existingShelfLoading &&
-        <div className={styles.bookResults}>
-          {books.map(
-            (book) => {
-              const firstState = existingShelves?.get(book.id);
-              return <BookRow book={book} key={book.id} firstState={firstState as firstLookup} updateId={updateId} />
-            }
-          )}
-        </div>
-      }
     </div>
   );
 }
 
-const TodoSection = memo(function todosection(props: { todolist: Book[] | undefined, todoFirstState: Map<string, firstLookup> | undefined, updateId: (id: number, bookId: string) => void }) {
-  const { todolist, todoFirstState, updateId } = props;
+const TodoSection = memo(function todosection(props: { todolist: Book[] | undefined, todoFirstState: Map<string, firstLookup> | undefined }) {
+  const { todolist, todoFirstState } = props;
   console.log("TODOSECTUON", todolist)
   return <div className={styles.bookResults}>
     {!todolist && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
@@ -245,7 +180,6 @@ const TodoSection = memo(function todosection(props: { todolist: Book[] | undefi
             book={book}
             key={book.id}
             firstState={firstState as firstLookup}
-            updateId={updateId}
             showLabels={arcLabels}
           />
         )

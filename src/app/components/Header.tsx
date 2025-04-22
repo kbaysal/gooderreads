@@ -5,14 +5,10 @@ import {
 } from '@clerk/nextjs';
 import { IconBook, IconBook2, IconBookmark, IconHome, IconVocabularyOff } from "@tabler/icons-react";
 import { Button, ConfigProvider, Input, Tooltip } from "antd";
-import { usePathname } from "next/navigation";
-import { KeyboardEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { KeyboardEvent, useCallback } from "react";
 import { Shelf } from "../lib/helper";
 import styles from "../page.module.css";
-
-interface HeaderProps {
-    onEnter?: (e: KeyboardEvent<HTMLInputElement>) => void;
-}
 
 const stylesForSignedInButton = {
     elements: {
@@ -26,9 +22,16 @@ const stylesForSignedInButton = {
     }
 };
 
-export default function Header(props: HeaderProps) {
-    const path = usePathname();
-    console.log("path", path);
+export default function Header(props: { q?: string }) {
+    const router = useRouter();
+
+    const onEnter = useCallback(
+        (e: KeyboardEvent<HTMLInputElement>) => {
+            router.push(`/search?q=${(e.target as HTMLInputElement).value}`);
+        },
+        [router]
+    );
+
     return (
         <div className={styles.header}>
             <div className={styles.nav}>
@@ -41,10 +44,14 @@ export default function Header(props: HeaderProps) {
                     <Nav shelf={Shelf.READ} className={styles.readnav} color="#5576eb" icon={IconBook2} />
                     <Nav shelf={Shelf.DNF} className={styles.dnfnav} color="#6058e2" icon={IconVocabularyOff} />
                 </div>
-                <UserButton appearance={stylesForSignedInButton}/>
+                <UserButton appearance={stylesForSignedInButton} />
             </div>
             <div className={styles.searchbox}>
-                <Input placeholder="search for book, use quotes for exact match, intitle:, inauthor:" onPressEnter={props.onEnter} />
+                <Input
+                    placeholder="search for book, use quotes for exact match, intitle:, inauthor:"
+                    onPressEnter={onEnter}
+                    defaultValue={props.q}
+                />
             </div>
         </div>
     );
