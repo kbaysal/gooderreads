@@ -62,7 +62,7 @@
     margin-right: 2px;
 }
 
-.boughtRadio {
+.stacked {
     display: flex;
     flex-direction: column;
 }
@@ -88,11 +88,6 @@
 
 .modal .diversityRows>* {
     margin: 0;
-}
-
-.diversityCheckboxes {
-    display: flex;
-    flex-direction: column;
 }
 
 @media screen and (max-width: 700px) {

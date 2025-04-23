@@ -1,17 +1,17 @@
 "use client"
 
+import { useAuth } from "@clerk/nextjs";
 import { IconCarambolaFilled, IconFlameFilled } from "@tabler/icons-react";
-import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Radio, RadioChangeEvent, Rate, Select } from "antd";
+import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select } from "antd";
 import Modal from "antd/es/modal/Modal";
+import { DefaultOptionType } from "antd/es/select";
 import dayjs, { Dayjs } from 'dayjs';
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { useIsMobile } from "../hooks/useWindowDimension";
 import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, LabelFields, updateBook } from "../lib/data";
 import { Format, Shelf } from "../lib/helper";
 import styles from "../styles/labels.module.css";
 import { Formats } from "./FormatButtons";
-import { DefaultOptionType } from "antd/es/select";
-import { useAuth } from "@clerk/nextjs";
-import { useIsMobile } from "../hooks/useWindowDimension";
 
 interface LabelsModalProps {
     isOpen: boolean;
@@ -246,14 +246,12 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         [bookData, diversityOptions, userId]
     );
 
-    const onBoughtChange = useCallback(
-        (e: RadioChangeEvent) => {
-            if (bookData && e.target.value === "bought") {
-                setBookData({ ...bookData, owned: true, wanttobuy: false })
-            } else if(bookData) {
-                setBookData({ ...bookData, owned: false, wanttobuy: true, boughtyear: null });
-            }
-        },
+    const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback(
+        (e) => bookData && setBookData({ ...bookData, owned: e.target.checked, wanttobuy: false }),
+        [bookData]
+    );
+    const wantToBuyClick: GetProp<typeof Checkbox, 'onChange'> = useCallback(
+        (e) => bookData && setBookData({ ...bookData, owned: false, wanttobuy: e.target.checked, boughtyear: null }),
         [bookData]
     );
 
@@ -335,37 +333,25 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                             />
                         </div>
 
-                        <div className={styles.selection}>
-                            <Radio.Group
-                                onChange={onBoughtChange}
-                                className={styles.boughtRadio}
-                                options={[
+                        <div className={`${styles.selection} ${styles.stacked}`}>
+                            <Checkbox onChange={isOwnedClick} checked={bookData.owned}>
+                                <div>
+                                    <span>Bought?</span>
                                     {
-                                        value: "bought",
-                                        label: (
-                                            <div>
-                                                <span>
-                                                    Bought?
-                                                </span>
-                                                {
-                                                    bookData.owned &&
-                                                    <DatePicker
-                                                        className={styles.boughtDate}
-                                                        picker="year"
-                                                        onChange={boughtYearChange}
-                                                        placeholder="Year"
-                                                        defaultValue={bookData.boughtyear ? dayjs(new Date((bookData.boughtyear + 1) + "")) : undefined}
-                                                    />
-                                                }
-                                            </div>
-                                        )
-                                    },
-                                    {
-                                        value: "want to buy",
-                                        label: (<div>Want to buy?</div>)
-                                    },
-                                ]}
-                            />
+                                        bookData.owned &&
+                                        <DatePicker
+                                            picker="year"
+                                            onChange={boughtYearChange}
+                                            placeholder="Year"
+                                            className={styles.boughtDate}
+                                            defaultValue={bookData.boughtyear ? dayjs(new Date((bookData.boughtyear + 1) + "")) : undefined}
+                                        />
+                                    }
+                                </div>
+                            </Checkbox>
+                            <Checkbox onChange={wantToBuyClick} checked={bookData.wanttobuy}>
+                                Want to buy?
+                            </Checkbox>
                         </div>
                     </div>
                     <div className={styles.doubleWide}>
@@ -396,7 +382,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                     {bookData.sources && bookData.sources.indexOf("arc") > -1 && (
                         <div className={`${styles.selection} ${styles.diversityRows}`}>
                             <span className={styles.title}>Arc:</span>
-                            <div className={styles.diversityCheckboxes}>
+                            <div className={styles.stacked}>
                                 <Checkbox onChange={isOptionalClick} defaultChecked={bookData.arcoptional}>Optional?</Checkbox>
                                 <Checkbox onChange={isReviewedClick} defaultChecked={bookData.arcreviewed}>Reviewed?</Checkbox>
                             </div>
@@ -413,7 +399,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                     )}
                     <div className={`${styles.selection} ${styles.diversityRows}`}>
                         <span className={styles.title}>Diversity:</span>
-                        <div className={styles.diversityCheckboxes}>
+                        <div className={styles.stacked}>
                             <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Diverse?</Checkbox>
                             <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>BIPOC?</Checkbox>
                             <Checkbox onChange={isLgbtClick} defaultChecked={bookData.lgbt}>LGBTQIA+?</Checkbox>
