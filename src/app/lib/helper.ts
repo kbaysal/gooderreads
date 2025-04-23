@@ -30,6 +30,8 @@ export enum Todo {
 
 export const mobileThreshold = 700;
 export const dateFormat = 'YYYY-MM-DD';
+export const wanttobuyPath = "tbb";
+export const wanttobuyTitle = "Want to buy";
 
 export const bookEntry = (userId: string, bookId: string, releaseDateG?: string) => {
     console.log("book entry ")

@@ -40,10 +40,14 @@ export interface BookData extends LabelFields {
     bipoc?: boolean;
     lgbt?: boolean;
     owned?: boolean;
+    wanttobuy?: boolean;
     boughtyear?: number | null;
     releasedateG?: string;
     releasedate?: string;
 }
+
+type BookDataColumn = keyof BookData | "shelf";
+export type BookFilter = Partial<Record<BookDataColumn, unknown>>;
 
 export interface EmailInfo {
     bookid: string;
@@ -211,6 +215,36 @@ export async function getAllBookInfo(id: number): Promise<BookData[]> {
         console.log(e);
         return [];
     }
+}
+
+export async function getBooksWithFilter(userId: string, filter: BookFilter): Promise<firstLookup[]> {
+    const sql = neon(`${process.env.DATABASE_URL}`);
+    const query = `
+        SELECT 
+            b.bookid, 
+            b.id, 
+            b.formats, 
+            COALESCE(b.releaseDate, b.releaseDateG) AS releaseDate,
+            CASE
+                WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
+                WHEN b.id = ANY((u.shelves).READING) THEN 'READING'
+                WHEN b.id = ANY((u.shelves).READ) THEN 'READ'
+                WHEN b.id = ANY((u.shelves).DNF) THEN 'DNF'
+                ELSE NULL
+            END AS shelf
+        FROM books b
+        JOIN bookUsers u ON u.id = b.userid
+        WHERE 
+            ${filter.shelf ? (filter.shelf as Shelf[]).map((shelf) => `b.id = ANY((u.shelves).${shelf})`).join(" OR ") : ""}
+            ${(filter.shelf as Shelf[])?.length > 0 ? " AND ": ""}
+            ${(filter.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
+            u.id = '${userId}';
+
+    `;
+    console.log(query);
+    const response = await sql.query(query);
+    console.log(response);
+    return response as firstLookup[];
 }
 
 export async function getBooksFromShelf(shelf: Shelf, userId: string): Promise<firstLookup[]> {

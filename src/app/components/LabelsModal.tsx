@@ -1,7 +1,7 @@
 "use client"
 
 import { IconCarambolaFilled, IconFlameFilled } from "@tabler/icons-react";
-import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select } from "antd";
+import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Radio, RadioChangeEvent, Rate, Select } from "antd";
 import Modal from "antd/es/modal/Modal";
 import dayjs, { Dayjs } from 'dayjs';
 import { JSX, useCallback, useEffect, useMemo, useState } from "react";
@@ -246,7 +246,16 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         [bookData, diversityOptions, userId]
     );
 
-    const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, owned: e.target.checked }), [bookData]);
+    const onBoughtChange = useCallback(
+        (e: RadioChangeEvent) => {
+            if (bookData && e.target.value === "bought") {
+                setBookData({ ...bookData, owned: true, wanttobuy: false })
+            } else if(bookData) {
+                setBookData({ ...bookData, owned: false, wanttobuy: true, boughtyear: null });
+            }
+        },
+        [bookData]
+    );
 
     const boughtYearChange = useCallback(
         (date: Dayjs, yearString: string | string[]) => {
@@ -327,16 +336,36 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         </div>
 
                         <div className={styles.selection}>
-                            <Checkbox onChange={isOwnedClick} defaultChecked={bookData.owned}>Bought?</Checkbox>
-                            {
-                                bookData.owned &&
-                                <DatePicker
-                                    picker="year"
-                                    onChange={boughtYearChange}
-                                    placeholder="Year"
-                                    defaultValue={bookData.boughtyear ? dayjs(new Date((bookData.boughtyear + 1) + "")) : undefined}
-                                />
-                            }
+                            <Radio.Group
+                                onChange={onBoughtChange}
+                                className={styles.boughtRadio}
+                                options={[
+                                    {
+                                        value: "bought",
+                                        label: (
+                                            <div>
+                                                <span>
+                                                    Bought?
+                                                </span>
+                                                {
+                                                    bookData.owned &&
+                                                    <DatePicker
+                                                        className={styles.boughtDate}
+                                                        picker="year"
+                                                        onChange={boughtYearChange}
+                                                        placeholder="Year"
+                                                        defaultValue={bookData.boughtyear ? dayjs(new Date((bookData.boughtyear + 1) + "")) : undefined}
+                                                    />
+                                                }
+                                            </div>
+                                        )
+                                    },
+                                    {
+                                        value: "want to buy",
+                                        label: (<div>Want to buy?</div>)
+                                    },
+                                ]}
+                            />
                         </div>
                     </div>
                     <div className={styles.doubleWide}>

@@ -5,6 +5,6 @@ import { Shelf } from "../lib/helper";
 
 export default function TBR() {
     return (
-        <ShelfView shelf={Shelf.TBR} />
+        <ShelfView title={Shelf.TBR} filter={{ shelf: [Shelf.TBR]}}/>
     )
 }

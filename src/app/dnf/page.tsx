@@ -5,6 +5,6 @@ import { Shelf } from "../lib/helper";
 
 export default function DNF() {
     return (
-        <ShelfView shelf={Shelf.DNF} />
+        <ShelfView title={Shelf.DNF} filter={{ shelf: [Shelf.DNF]}}/>
     )
 }

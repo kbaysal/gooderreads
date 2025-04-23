@@ -5,6 +5,6 @@ import { Shelf } from "../lib/helper";
 
 export default function Reading() {
     return (
-        <ShelfView shelf={Shelf.READING} />
+        <ShelfView title={Shelf.READING} filter={{ shelf: [Shelf.READING]}}/>
     )
 }
