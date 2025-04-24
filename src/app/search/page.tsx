@@ -2,6 +2,7 @@
 
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { Spin } from 'antd';
 import { use, useCallback, useEffect, useState } from 'react';
 import { BookRow } from '../components/BookRow';
@@ -19,45 +20,52 @@ export default function Search(props: {
     const [books, setBooks] = useState<Book[]>();
     const [existingShelfLoading, setExistingShelfLoading] = useState(false);
     const { userId } = useAuth();
-
     const q = use(props.searchParams)?.q as string;
+
+    const queryResults = useQuery({
+        queryKey: ["search", q],
+        queryFn: () => fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
+            async (response) => {
+                const result: BookResponse = await response.json();
+                console.log(result);
+                const resultSet = new Map<string, Book>();
+                if (result?.items?.length > 0) {
+                    result.items = result.items.filter((book) => {
+                        if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
+                            addBook(book);
+                            resultSet.set(book.id, book);
+                            return true;
+                        }
+                        return false;
+                    });
+                    setBooks(Array.from(resultSet.values()));
+                }
+
+                return result;
+            }
+        ),
+        enabled: !!q,
+    });
+    const shelfState = useQuery({
+        queryKey: ["shelf", { books: queryResults.data?.items, userId }],
+        queryFn: () => existsOnShelf(queryResults.data?.items?.map((book) => book.id) as string[], userId as string),
+        enabled: !!userId && !!queryResults.data,
+    });
 
     useEffect(
         () => {
-            fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
-                async (response) => {
-                    setExistingShelfLoading(true);
-                    const result: BookResponse = await response.json();
-                    console.log(result);
-                    const resultSet = new Map<string, Book>();
-                    if (result?.items?.length > 0) {
-                        result.items = result.items.filter((book) => {
-                            if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
-                                addBook(book);
-                                resultSet.set(book.id, book);
-                                return true;
-                            }
-                            return false;
-                        });
-
-                        setBooks(Array.from(resultSet.values()));
-
-                        const shelfState = await existsOnShelf(result.items.map((book) => book.id), userId as string);
-                        const shelfMap = new Map<string, firstLookup>();
-                        shelfState.forEach(
-                            (book) => {
-                                shelfMap.set(book.bookid, book);
-                            }
-                        )
-                        setExistingShelves(shelfMap);
-                        setExistingShelfLoading(false);
-                        console.log(shelfMap);
-                        console.log("shelfstate", shelfState);
-                    }
+            const shelfMap = new Map<string, firstLookup>();
+            shelfState?.data?.forEach(
+                (book) => {
+                    shelfMap.set(book.bookid, book);
                 }
-            );
+            )
+            setExistingShelves(shelfMap);
+            setExistingShelfLoading(false);
+            console.log(shelfMap);
+            console.log("shelfstate", shelfState);
         },
-        [userId, q]
+        [shelfState]
     );
 
 
