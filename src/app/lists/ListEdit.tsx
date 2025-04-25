@@ -2,20 +2,20 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button, Checkbox, DatePicker, Dropdown, GetProp, GetRef, Input, MenuProps, Select } from "antd";
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Checkbox, DatePicker, GetProp, Input, Select } from "antd";
+import { DefaultOptionType } from "antd/es/select";
+import dayjs, { Dayjs } from "dayjs";
+import { useRouter } from "next/navigation";
+import { ChangeEvent, useCallback, useEffect, useMemo, useState } from "react";
 import BookShelves from "../components/BookShelves";
+import { Formats } from "../components/FormatButtons";
 import Header from "../components/Header";
 import { BookFilter, FilterWithOperator, ListInfo } from "../lib/data";
 import { Format, Shelf } from "../lib/helper";
+import { createList, editList } from "../lib/lists";
 import styles from "../page.module.css";
-import listStyles from "../styles/list.module.css";
 import labelStyles from "../styles/labels.module.css";
-import { useRouter } from "next/navigation";
-import { createList } from "../lib/lists";
-import { FormatButtons, Formats } from "../components/FormatButtons";
-import { DefaultOptionType } from "antd/es/select";
-import dayjs, { Dayjs } from "dayjs";
+import listStyles from "../styles/list.module.css";
 
 interface EditListProps {
     name: string;
@@ -23,7 +23,7 @@ interface EditListProps {
     id: number;
 }
 
-export default function CreateList(props: EditListProps | {}) {
+export default function CreateList(props: EditListProps | Record<string, never> = {}) {
     const [listName, setListName] = useState<string | undefined>();
     const [filter, setFilter] = useState<BookFilter>({});
     const { userId } = useAuth();
@@ -32,12 +32,12 @@ export default function CreateList(props: EditListProps | {}) {
     const mutation = useMutation({
         mutationFn: (vars: Omit<ListInfo, "id">) =>
             (props as EditListProps).id ?
-                Promise.resolve((props as EditListProps).id) :
+                editList((props as EditListProps).id, vars.name, vars.filters).then(() => (props as EditListProps).id) :
                 createList(vars.userid, vars.name, vars.filters),
         onSuccess: (id, vars) => {
             const lists: ListInfo[] = queryClient.getQueryData(["lists"]) || [];
             const index = lists.findIndex((list) => list.id === id);
-            let newLists = [...lists];
+            const newLists = [...lists];
             const newList: ListInfo = { id: id as number, ...vars };
             if (index > -1) {
                 newLists[index] = newList;
@@ -52,12 +52,22 @@ export default function CreateList(props: EditListProps | {}) {
     })
 
     useEffect(
-        () => { (props as EditListProps).name && setListName((props as EditListProps).name) },
+        () => {
+            if ((props as EditListProps).name) {
+                setListName((props as EditListProps).name)
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [(props as EditListProps).name]
     );
 
     useEffect(
-        () => { (props as EditListProps).filter && setFilter((props as EditListProps).filter) },
+        () => {
+            if ((props as EditListProps).filter) {
+                setFilter((props as EditListProps).filter)
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [(props as EditListProps).filter]
     )
 
@@ -114,19 +124,19 @@ export default function CreateList(props: EditListProps | {}) {
 
     const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => setFilter({ ...filter, owned: e.target.checked }), [filter]);
     const wantToBuyClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => setFilter({ ...filter, wanttobuy: e.target.checked }), [filter]);
-    const acquiredClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => { 
-        setFilter({...filter, boughtyear: e.target.checked ? (filter.boughtyear || {}) : undefined});
+    const acquiredClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => {
+        setFilter({ ...filter, boughtyear: e.target.checked ? (filter.boughtyear || {}) : undefined });
     }, [filter]);
     const onAcquiredDateChange = useCallback((date: Dayjs, yearString: string | string[]) => {
         const boughtyear = (filter.boughtyear || {});
         boughtyear.data = parseInt(yearString as string);
-        setFilter({...filter, boughtyear});
-    },[filter])
+        setFilter({ ...filter, boughtyear });
+    }, [filter])
     const onAcquiredOperatorChange = useCallback((val: FilterWithOperator<number>["operator"]) => {
         const boughtyear = (filter.boughtyear || {});
         boughtyear.operator = val;
-        setFilter({...filter, boughtyear});
-    },[filter])
+        setFilter({ ...filter, boughtyear });
+    }, [filter])
 
     const onSave = useCallback(
         () => {
@@ -186,7 +196,10 @@ export default function CreateList(props: EditListProps | {}) {
                 </div>
 
             </div>
-            <Button type="primary" onClick={onSave} disabled={!listName}>Save</Button>
+            <div className={listStyles.listEditFooter}>
+                <Button type="primary" onClick={onSave} disabled={!listName}>Save</Button>
+                <Button type="default" >Cancel</Button>
+            </div>
         </div>
     )
 }

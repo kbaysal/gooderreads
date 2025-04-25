@@ -1,12 +1,12 @@
 "use client"
 
 import { ListInfo } from "@/app/lib/data";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getLists } from "@/app/lib/lists";
+import { useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import { use, useMemo } from "react";
 import ShelfView from "../../components/ShelfView";
 import { wanttobuyPath, wanttobuyTitle } from "../../lib/helper";
-import { getLists } from "@/app/lib/lists";
-import { useAuth } from "@clerk/nextjs";
 
 const wanttobuyListInfo: Omit<ListInfo, "userid"> = {
     id: wanttobuyPath,
@@ -16,7 +16,6 @@ const wanttobuyListInfo: Omit<ListInfo, "userid"> = {
 
 export default function List(props: { params: Promise<{ id: string }> }) {
     const id = use(props.params).id;
-    const queryClient = useQueryClient();
     const { userId } = useAuth();
     const { data: lists } = useQuery({
         queryKey: ["lists"],
@@ -26,13 +25,12 @@ export default function List(props: { params: Promise<{ id: string }> }) {
 
     const list = useMemo(
         () => {
-            console.log(id, lists);
             return id === wanttobuyPath ?
                 wanttobuyListInfo :
                 lists && lists.find((list) => list.id + "" === id)
 
         },
-        [lists]
+        [lists, id]
     );
 
     return (

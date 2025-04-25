@@ -52,7 +52,7 @@ export interface FilterWithOperator<T> {
     operator?: "<" | ">" | "=",
     data?: T
 }
-export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<any> | unknown> & BoughtYear>;
+export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear>;
 export interface ListInfo {
     id: number | string;
     userid: string;
@@ -260,7 +260,7 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
             ${(filter?.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
             ${(filter?.owned ? "b.owned = TRUE AND" : "")}
             ${(filter?.boughtyear ? `b.boughtyear ${filter?.boughtyear.operator} ${filter?.boughtyear.data} AND` : "")}
-            ${filter.formats ? `formats && $1 AND` : ""}
+            ${(filter.formats as Format[])?.length > 0 ? `formats && $1 AND` : ""}
             u.id = '${userId}';
 
     `;
@@ -270,7 +270,6 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
     }
     console.log(query);
     const response = await sql.query(query, variables);
-    console.log(response);
     return response as firstLookup[];
 }
 

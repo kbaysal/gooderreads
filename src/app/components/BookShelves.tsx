@@ -1,9 +1,9 @@
-import { IconBookmark, IconBook, IconBook2, IconVocabularyOff, IconTag, IconPlus } from "@tabler/icons-react";
+import { IconBook, IconBook2, IconBookmark, IconPlus, IconTag, IconVocabularyOff } from "@tabler/icons-react";
 import { Button, Dropdown, MenuProps, Tooltip } from "antd";
-import { Shelf } from "../lib/helper";
-import { JSX, memo, useCallback, useEffect, useMemo, useRef } from "react";
-import styles from "../page.module.css";
 import { SizeType } from "antd/es/config-provider/SizeContext";
+import { JSX, memo, useCallback, useMemo } from "react";
+import { Shelf } from "../lib/helper";
+import styles from "../page.module.css";
 
 interface BookShelvesProps {
     iconSize: number;
@@ -22,17 +22,6 @@ function BookShelves(props: BookShelvesProps) {
     const readingClick = useCallback(() => { shelfClick(Shelf.READING); }, [shelfClick]);
     const readClick = useCallback(() => { shelfClick(Shelf.READ); }, [shelfClick]);
     const dnfClick = useCallback(() => shelfClick(Shelf.DNF), [shelfClick]);
-    //const onShelfRef = useRef<Shelf[]>([]);
-    //const shelfClickRef = useRef();
-
-    // useEffect(
-    //     () => {
-    //         console.log("onShelfRef", onShelfRef.current == onShelf);
-    //         onShelfRef.current = onShelf as Shelf[];
-    //         console.log("shelfClickRef", shelfClickRef.current == shelfClickRef);
-    //         shelfClickRef.current = shelfClickRef;
-    //     }
-    // )
 
     const menuOptions: MenuProps['items'] = useMemo(
         () => [

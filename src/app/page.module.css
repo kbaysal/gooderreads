@@ -258,7 +258,7 @@
   align-items: center;
   gap: 12px;
   flex: 1;
-  justify-content: end;
+  justify-content: flex-end;
 }
 
 .collapse:first-child {

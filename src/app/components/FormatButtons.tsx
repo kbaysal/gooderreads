@@ -90,6 +90,7 @@ export const Formats = (props: FormatsProps) => {
 
             }
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [props.formatsChosen, props.bookId, props.setFormatsChosen, timer, userId]
     );
 

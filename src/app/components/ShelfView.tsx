@@ -39,7 +39,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
         () => {
             mutation.mutate(props.listId as number);
         },
-        [mutation]
+        [mutation, props.listId]
     )
 
     return (
