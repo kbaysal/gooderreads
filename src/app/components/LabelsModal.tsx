@@ -336,7 +336,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                         <div className={`${styles.selection} ${styles.stacked}`}>
                             <Checkbox onChange={isOwnedClick} checked={bookData.owned}>
                                 <div>
-                                    <span>Bought?</span>
+                                    <span>Owned?</span>
                                     {
                                         bookData.owned &&
                                         <DatePicker

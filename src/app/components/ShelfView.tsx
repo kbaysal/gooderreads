@@ -43,7 +43,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string }) 
     return (
         <div className={styles.page}>
             <Header />
-            <h3 className={styles.todoTitle}>{props.title}{books ? `(${books.length})` : ""}:</h3>
+            <h3 className={styles.todoTitle}>{props.title}{books ? ` (${books.length})`: ""}:</h3>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
             {noResults && <div>No books were found matching this list</div>}
             {books &&

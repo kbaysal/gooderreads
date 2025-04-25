@@ -6,7 +6,7 @@ import {
 import { IconBook, IconBook2, IconBookmark, IconHome, IconPlus, IconShoppingBag, IconVocabularyOff } from "@tabler/icons-react";
 import { Button, ConfigProvider, Dropdown, Input, Tooltip } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { KeyboardEvent, useCallback } from "react";
+import { KeyboardEvent, useCallback, useState } from "react";
 import { Shelf, wanttobuyPath, wanttobuyTitle } from "../lib/helper";
 import styles from "../page.module.css";
 
@@ -62,6 +62,23 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
     const path = usePathname();
     const href = `/${(props.shelf.toLowerCase())}`;
     const activePath = path === href;
+    const [isHover, setHover] = useState(false);
+
+    const onMouseEnter = useCallback(
+        () => {
+            setHover(true);
+            console.log("hover");
+        },
+        []
+    );
+    const onMouseExit = useCallback(
+        () => {
+            setHover(false);
+            console.log("stop hover");
+        },
+        []
+    );
+
     return (
         <Tooltip title={activePath ? "" : `Go to ${props.shelf}`} >
             <ConfigProvider wave={{ disabled: true }}>
@@ -69,10 +86,12 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
                     type="text"
                     href={activePath ? "" : href}
                     style={{
-                        backgroundColor: activePath ? props.color : "transparent",
+                        backgroundColor: activePath ? props.color : isHover ? `${props.color}20` : "transparent",
                         color: activePath ? "white" : props.color
                     }}
                     className={`${props.className} ${activePath ? styles.activeNav : ""}`}
+                    onMouseEnter={onMouseEnter}
+                    onMouseLeave={onMouseExit}
                 >
                     <props.icon size={32} color={activePath ? "white" : props.color} />
                 </Button>
@@ -84,6 +103,16 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
 
 const SmartList = (props: { color: string }) => {
     const router = useRouter();
+    const [isHover, setHover] = useState(false);
+
+    const onMouseEnter = useCallback(
+        (open: boolean) => {
+            setHover(open);
+            console.log("hover");
+        },
+        []
+    );
+
     const onClick = useCallback(
         () => {
             router.push(`/lists/${wanttobuyPath}`);
@@ -98,8 +127,15 @@ const SmartList = (props: { color: string }) => {
                     { label: wanttobuyTitle, key: wanttobuyTitle, icon: <IconShoppingBag />, onClick: onClick },
                 ]
             }}
+            onOpenChange={onMouseEnter}
         >
-            <IconPlus size={32} color={props.color} />
+            <IconPlus
+                size={32}
+                color={props.color}
+                style={{
+                    backgroundColor: isHover ? `${props.color}20` : "transparent",
+                }}
+            />
         </Dropdown>
     );
 };
