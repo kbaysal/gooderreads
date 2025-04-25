@@ -35,6 +35,7 @@ export default function Header(props: { q?: string }) {
     return (
         <div className={styles.header}>
             <div className={styles.nav}>
+                <UserButton appearance={stylesForSignedInButton} />
                 <Tooltip title="Go to home">
                     <Button variant="text" color="magenta" href="/"><IconHome size={32} /></Button>
                 </Tooltip>
@@ -45,7 +46,6 @@ export default function Header(props: { q?: string }) {
                     <Nav shelf={Shelf.DNF} className={styles.dnfnav} color="#586ee8" icon={IconVocabularyOff} />
                     <SmartList color="#6058e2" />
                 </div>
-                <UserButton appearance={stylesForSignedInButton} />
             </div>
             <div className={styles.searchbox}>
                 <Input

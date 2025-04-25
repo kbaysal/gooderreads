@@ -17,14 +17,12 @@ export default function Search(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
-    const [books, setBooks] = useState<Book[]>();
     const [existingShelfLoading, setExistingShelfLoading] = useState(false);
     const { userId } = useAuth();
     const q = use(props.searchParams)?.q as string;
 
-    const queryResults = useQuery({
-        queryKey: ["search", q],
-        queryFn: () => fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
+    const fetchBooks = useCallback(
+        () => fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
             async (response) => {
                 const result: BookResponse = await response.json();
                 console.log(result);
@@ -38,32 +36,47 @@ export default function Search(props: {
                         }
                         return false;
                     });
-                    setBooks(Array.from(resultSet.values()));
                 }
 
-                return result;
+                return Array.from(resultSet.values());
             }
         ),
+        [q]
+    );
+    const { data: books } = useQuery({
+        queryKey: ["search", q],
+        queryFn: fetchBooks,
         enabled: !!q,
     });
-    const shelfState = useQuery({
-        queryKey: ["shelf", { books: queryResults.data?.items, userId }],
-        queryFn: () => existsOnShelf(queryResults.data?.items?.map((book) => book.id) as string[], userId as string),
-        enabled: !!userId && !!queryResults.data,
+
+    const callExistsOnShelf = useCallback(
+        () => {
+            if (books && userId) {
+                return existsOnShelf((books)?.map((book) => book.id) as string[], userId as string);
+            }
+        },
+        [books, userId]
+    );
+    const { data: shelfState } = useQuery({
+        queryKey: ["shelf", { books: (books)?.map((book) => book.id).join(""), userId }],
+        queryFn: callExistsOnShelf,
+        enabled: !!userId && !!books && books.length > 0,
     });
 
     useEffect(
         () => {
-            const shelfMap = new Map<string, firstLookup>();
-            shelfState?.data?.forEach(
-                (book) => {
-                    shelfMap.set(book.bookid, book);
-                }
-            )
-            setExistingShelves(shelfMap);
-            setExistingShelfLoading(false);
-            console.log(shelfMap);
-            console.log("shelfstate", shelfState);
+            if (shelfState) {
+                const shelfMap = new Map<string, firstLookup>();
+                shelfState.forEach(
+                    (book) => {
+                        shelfMap.set(book.bookid, book);
+                    }
+                );
+                setExistingShelves(shelfMap);
+                setExistingShelfLoading(false);
+                console.log(shelfMap);
+                console.log("shelfstate", shelfState);
+            }
         },
         [shelfState]
     );
