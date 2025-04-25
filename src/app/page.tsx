@@ -3,12 +3,14 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { IconEyeglass2, IconWriting } from '@tabler/icons-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Collapse, CollapseProps, Spin } from 'antd';
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { BookRow } from './components/BookRow';
 import Header from './components/Header';
+import { queryForUseBooks } from './hooks/useBooks';
 import { firstLookup, getARCTBR } from "./lib/data";
-import { getBooks, Todo } from './lib/helper';
+import { Todo } from './lib/helper';
 import styles from "./page.module.css";
 
 const collapsedStyles = [
@@ -23,51 +25,51 @@ export default function Home() {
   const [todoFirstState, setTodoFirstState] = useState<Map<string, firstLookup>>();
   const { userId } = useAuth();
   const { user } = useUser();
-  const requestsMade = useRef(false);
+  const queryClient = useQueryClient();
+
+  const { data } = useQuery({
+    queryKey: ["getARCTBR", userId],
+    queryFn: () => {
+      const recent = (new Date().valueOf() - (user?.createdAt as Date).valueOf()) < 60000;
+      return getARCTBR(
+        userId as string,
+        recent ? (user?.fullName as string) : undefined,
+        recent ? (user?.primaryEmailAddress?.emailAddress as string) : undefined
+      )
+    },
+    enabled: !!userId && !!user,
+  })
 
   useEffect(
     () => {
-      console.log("user", user, "userId", userId);
-      if (user && userId && !requestsMade.current) {
-        const recent = (new Date().valueOf() - (user.createdAt as Date).valueOf()) < 60000
-        console.log("user created", user.createdAt, (new Date().valueOf() - (user.createdAt as Date).valueOf()) < 6000000);
-        requestsMade.current = true;
-        console.log("email:", user.primaryEmailAddress?.emailAddress);
-        getARCTBR(userId, recent ? (user.fullName as string) : undefined, user.primaryEmailAddress?.emailAddress).then(
-          (response) => {
-            console.log(response);
-            if (response?.length > 0) {
-              const todoState = new Map<string, firstLookup>();
-              const todoExpiredNew: string[] = [];
-              const todoComingNew: string[] = [];
-              const todoReviewExpiredNew: string[] = [];
-              const todoReviewComingNew: string[] = [];
-              response.forEach((book) => {
-                switch (book.todo) {
-                  case Todo.OverdueToRead:
-                    todoExpiredNew.push(book.bookid);
-                    break;
-                  case Todo.UpcomingToRead:
-                    todoComingNew.push(book.bookid);
-                    break;
-                  case Todo.OverdueToReview:
-                    todoReviewExpiredNew.push(book.bookid);
-                    break;
-                  case Todo.UpcomingToReview:
-                    todoReviewComingNew.push(book.bookid);
-                    break;
-                }
-                todoState.set(book.bookid, book);
-                return book.bookid;
-              })
-              setTodoFirstState(todoState);
-              setTodoIds([todoExpiredNew, todoComingNew, todoReviewExpiredNew, todoReviewComingNew]);
-            }
+      if (Array.isArray(data) && data?.length > 0) {
+        const todoState = new Map<string, firstLookup>();
+        const todoExpiredNew: string[] = [];
+        const todoComingNew: string[] = [];
+        const todoReviewExpiredNew: string[] = [];
+        const todoReviewComingNew: string[] = [];
+        data.forEach((book) => {
+          switch (book.todo) {
+            case Todo.OverdueToRead:
+              todoExpiredNew.push(book.bookid);
+              break;
+            case Todo.UpcomingToRead:
+              todoComingNew.push(book.bookid);
+              break;
+            case Todo.OverdueToReview:
+              todoReviewExpiredNew.push(book.bookid);
+              break;
+            case Todo.UpcomingToReview:
+              todoReviewComingNew.push(book.bookid);
+              break;
           }
-        )
+          todoState.set(book.bookid, book);
+          setTodoFirstState(todoState);
+          setTodoIds([todoExpiredNew, todoComingNew, todoReviewExpiredNew, todoReviewComingNew]);
+        });
       }
     },
-    [user, userId]
+    [data]
   );
 
   const toReadItems: CollapseProps['items'] = [
@@ -126,17 +128,23 @@ export default function Home() {
       if (keys.length > 0) {
         const todo = (keys[keys.length - 1] as unknown) as Todo;
         if (!todoBooks[todo]) {
-          const books = await getBooks((todoIds as string[][])[todo]);
-          if (!(books?.[0] as BookError).error) {
-            const newTodoBooks = [...todoBooks];
-            newTodoBooks[todo] = books as Book[];
-            setTodoBooks(newTodoBooks);
-
-          }
+          Promise.all((todoIds as string[][])[todo].map(
+            (bookId) => {
+              return queryClient.fetchQuery(queryForUseBooks(bookId))
+            }
+          )).then(
+            (books) => {
+              if (!(books?.[0] as BookError).error) {
+                const newTodoBooks = [...todoBooks];
+                newTodoBooks[todo] = books as Book[];
+                setTodoBooks(newTodoBooks);
+              }
+            }
+          )
         }
       }
     },
-    [todoBooks, todoIds]
+    [todoBooks, todoIds, queryClient]
   );
 
   return (

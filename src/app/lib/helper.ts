@@ -1,5 +1,3 @@
-import { addBook, getBook } from "../hooks/booksCache";
-
 export enum Format {
     Physical = 0,
     EBook = 1,
@@ -42,29 +40,4 @@ export const bookEntry = (userId: string, bookId: string, releaseDateG?: string)
         DO UPDATE SET bookId = EXCLUDED.bookId  -- or nothing, just prevents error
         RETURNING id;
     `;
-}
-
-export const getBooks = async (bookIds: string[]): Promise<Book[] | BookError[] | never[]> => {
-    return Promise.all(
-        bookIds.map((id: string) => {
-            const book = getBook(id);
-            if (!book) {
-                return fetch(`https://www.googleapis.com/books/v1/volumes/${id}?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA`);
-            }
-
-            return book;
-        })
-    ).then((responses) => {
-        return Promise.all(responses.map(
-            async (response): Promise<Book> => {
-                const book = await (response as Response).json ? (response as Response).json() : response;
-                addBook(book as Book);
-                return book;
-            }
-        )).then(
-            (value) => {
-                return (value as Book[]);
-            }
-        ).catch(() => { return []; })
-    }).catch((reason) => { console.log(reason); return []; });
 }

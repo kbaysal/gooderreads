@@ -55,13 +55,13 @@
   justify-content: center;
 }
 
-.nav > a {
+.nav > button {
   position: absolute;
   padding: 0 12px;
   left: 0;
 }
 
-.nav a {
+.nav button {
   border-radius: 0;
 }
 
@@ -79,8 +79,7 @@
   border: 0;
 }
 
-
-.shelfNav > a {
+.shelfNav > button {
   animation: none;
   transition: none;
 }
@@ -112,6 +111,10 @@
 .nav > .shelfNav > .dnfnav.activeNav {
   background-color: #6058e2;
   cursor: default;
+}
+
+.customList {
+  margin-left: 32px;
 }
 
 .userButton {
@@ -250,6 +253,14 @@
   gap: 4px;
 }
 
+.listEditButtons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  justify-content: end;
+}
+
 .collapse:first-child {
   margin-bottom: 24px;
 }
@@ -294,7 +305,7 @@
     padding: 16px;
   }
 
-  .nav > a,
+  .nav > button,
   .shelfNav > * {
     padding: 0 8px; 
   }

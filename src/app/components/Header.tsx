@@ -1,14 +1,18 @@
 "use client"
 
 import {
+    useAuth,
     UserButton
 } from '@clerk/nextjs';
 import { IconBook, IconBook2, IconBookmark, IconHome, IconPlus, IconShoppingBag, IconVocabularyOff } from "@tabler/icons-react";
 import { Button, ConfigProvider, Dropdown, Input, Tooltip } from "antd";
 import { usePathname, useRouter } from "next/navigation";
-import { KeyboardEvent, useCallback, useState } from "react";
+import { KeyboardEvent, memo, useCallback, useMemo, useState } from "react";
 import { Shelf, wanttobuyPath, wanttobuyTitle } from "../lib/helper";
 import styles from "../page.module.css";
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { getLists } from '../lib/lists';
 
 const stylesForSignedInButton = {
     elements: {
@@ -22,7 +26,7 @@ const stylesForSignedInButton = {
     }
 };
 
-export default function Header(props: { q?: string }) {
+function Header(props: { q?: string }) {
     const router = useRouter();
 
     const onEnter = useCallback(
@@ -31,13 +35,16 @@ export default function Header(props: { q?: string }) {
         },
         [router]
     );
+    const onHomeClick = useCallback(() => router.push("/"), [router]);
 
     return (
         <div className={styles.header}>
             <div className={styles.nav}>
                 <UserButton appearance={stylesForSignedInButton} />
                 <Tooltip title="Go to home">
-                    <Button variant="text" color="magenta" href="/"><IconHome size={32} /></Button>
+                    <Button variant="text" color="magenta" onClick={onHomeClick}>
+                        <IconHome size={32} />
+                    </Button>
                 </Tooltip>
                 <div className={styles.shelfNav}>
                     <Nav shelf={Shelf.TBR} className={styles.tbrnav} color="#2baefa" icon={IconBookmark} />
@@ -63,28 +70,27 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
     const href = `/${(props.shelf.toLowerCase())}`;
     const activePath = path === href;
     const [isHover, setHover] = useState(false);
+    const router = useRouter();
 
     const onMouseEnter = useCallback(
         () => {
             setHover(true);
-            console.log("hover");
         },
         []
     );
     const onMouseExit = useCallback(
         () => {
             setHover(false);
-            console.log("stop hover");
         },
         []
     );
 
+    const onClick = useCallback(() => !activePath && router.push(href), [router, href, activePath]);
     return (
         <Tooltip title={activePath ? "" : `Go to ${props.shelf}`} >
             <ConfigProvider wave={{ disabled: true }}>
                 <Button
                     type="text"
-                    href={activePath ? "" : href}
                     style={{
                         backgroundColor: activePath ? props.color : isHover ? `${props.color}20` : "transparent",
                         color: activePath ? "white" : props.color
@@ -92,6 +98,7 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
                     className={`${props.className} ${activePath ? styles.activeNav : ""}`}
                     onMouseEnter={onMouseEnter}
                     onMouseLeave={onMouseExit}
+                    onClick={onClick}
                 >
                     <props.icon size={32} color={activePath ? "white" : props.color} />
                 </Button>
@@ -102,29 +109,42 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
 
 
 const SmartList = (props: { color: string }) => {
-    const router = useRouter();
     const [isHover, setHover] = useState(false);
+    const { userId } = useAuth();
+    const { data: lists } = useQuery({
+        queryKey: ["lists"],
+        queryFn: () => getLists(userId as string),
+        enabled: !!userId
+    })
 
+    console.log("lists", lists)
     const onMouseEnter = useCallback(
         (open: boolean) => {
             setHover(open);
-            console.log("hover");
         },
         []
     );
 
-    const onClick = useCallback(
-        () => {
-            router.push(`/lists/${wanttobuyPath}`);
-        },
-        [router]
+    const listElements = useMemo(() => {
+        if (lists) {
+            return lists?.map(
+                (list) => {
+                    return ({ label: <Link href={`/lists/${list.id}`} className={styles.customList}>{list.name}</Link>, key: list.id })
+                })
+        }
+
+        return [];
+    },
+        [lists]
     )
+
     return (
         <Dropdown
             menu={{
                 items: [
-                    { label: "Add your list", key: "Add", icon: <IconPlus /> },
-                    { label: wanttobuyTitle, key: wanttobuyTitle, icon: <IconShoppingBag />, onClick: onClick },
+                    { label: <Link href="/lists">Add your list</Link>, key: "Add", icon: <IconPlus /> },
+                    { label: <Link href={`/lists/${wanttobuyPath}`}>{wanttobuyTitle}</Link>, key: wanttobuyTitle, icon: <IconShoppingBag /> },
+                    ...listElements
                 ]
             }}
             onOpenChange={onMouseEnter}
@@ -139,3 +159,5 @@ const SmartList = (props: { color: string }) => {
         </Dropdown>
     );
 };
+
+export default memo(Header);

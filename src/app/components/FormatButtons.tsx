@@ -57,7 +57,7 @@ export const FormatButtons = (props: FormatButtonsProps) => (
 
 interface FormatsProps {
     formatsChosen: boolean[];
-    bookId: string;
+    bookId?: string;
     setFormatsChosen: (f: boolean[]) => void;
     className?: string;
     size?: SizeType;
@@ -72,18 +72,25 @@ export const Formats = (props: FormatsProps) => {
     const onClick = useCallback(
         (format: Format) => {
             const formats = [...(props.formatsChosen)];
+            console.log("formats before", formats);
             formats[format] = !formats[format];
+            console.log("formats after", formats);
             props.setFormatsChosen(formats);
-            if (timer) {
-                window.clearTimeout(timer);
+            if(props.bookId){
+                if (timer) {
+                    window.clearTimeout(timer);
+                }
+                setTimer(window.setTimeout(() => {
+                    if(props.bookId){
+                        const formatArray: Format[] = [];
+                        formats.forEach((isOn, index) => isOn && formatArray.push(index));
+                        editFormats(props.bookId, userId as string , formatArray);
+                    }
+                }, 500));
+
             }
-            setTimer(window.setTimeout(() => {
-                const formatArray: Format[] = [];
-                formats.forEach((isOn, index) => isOn && formatArray.push(index));
-                editFormats(props.bookId, userId as string , formatArray);
-            }, 500));
         },
-        [props, timer, userId]
+        [props.formatsChosen, props.bookId, props.setFormatsChosen, timer, userId]
     );
 
     const onPhysical = useCallback(() => onClick(Format.Physical), [onClick]);

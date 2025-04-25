@@ -1,16 +1,17 @@
 "use client"
 
-import { IconBook, IconBook2, IconBookmark, IconInfoHexagon, IconPlus, IconTag, IconVocabularyOff } from "@tabler/icons-react";
-import { Button, Dropdown, MenuProps, Popover, Tag, Tooltip } from "antd";
+import { useAuth } from "@clerk/nextjs";
+import { IconInfoHexagon } from "@tabler/icons-react";
+import { Popover, Tag } from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks/useWindowDimension";
 import { addToShelf, firstLookup, removeFromShelf } from "../lib/data";
 import { dateFormat, Format, Shelf } from "../lib/helper";
 import styles from "../page.module.css";
+import BookShelves from "./BookShelves";
 import { Formats } from "./FormatButtons";
 import { LabelsModal } from "./LabelsModal";
-import { useAuth } from "@clerk/nextjs";
 
 const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
 
@@ -111,11 +112,6 @@ export const BookRow = (props: BookRowProps) => {
         [props.firstState?.id, onShelf, props.book.id, props.updateId, userId]
     );
 
-    const tbrClick = useCallback(() => shelfClick(Shelf.TBR), [shelfClick]);
-    const readingClick = useCallback(() => { shelfClick(Shelf.READING); }, [shelfClick]);
-    const readClick = useCallback(() => { shelfClick(Shelf.READ); }, [shelfClick]);
-    const dnfClick = useCallback(() => shelfClick(Shelf.DNF), [shelfClick]);
-
     const tagClick = useCallback(() => openModal(true), []);
     const closeModal = useCallback(() => openModal(false), []);
 
@@ -126,50 +122,6 @@ export const BookRow = (props: BookRowProps) => {
             setFormatsChosen={setFormatChosen}
             className={styles.formats}
             iconSize={18} />
-    );
-
-    const menuOptions: MenuProps['items'] = useMemo(
-        () => [
-            {
-                label: "TBR",
-                icon: <IconBookmark />,
-                key: Shelf.TBR,
-                onClick: tbrClick
-            },
-            {
-                label: "Reading",
-                icon: <IconBook />,
-                key: Shelf.READING,
-                onClick: readingClick,
-            },
-            {
-                label: "Read",
-                icon: <IconBook2 />,
-                key: Shelf.READ,
-                onClick: readClick
-            },
-            {
-                label: "DNF",
-                icon: <IconVocabularyOff />,
-                key: Shelf.DNF,
-                onClick: dnfClick
-            },
-            {
-                label: "Tag",
-                icon: <IconTag />,
-                key: "Tag",
-                onClick: tagClick
-            },
-        ],
-        [tbrClick, readingClick, readClick, dnfClick, tagClick]
-    );
-
-    const menuProps: MenuProps = useMemo(
-        () => ({
-            items: menuOptions,
-            selectedKeys: [onShelf as string]
-        }),
-        [menuOptions, onShelf]
     );
 
     return (
@@ -202,40 +154,15 @@ export const BookRow = (props: BookRowProps) => {
                 </div>
             </div>
             <div className={styles.buttons}>
-                {isMobile && (
-                    <Dropdown menu={menuProps} >
-                        {getMenuIcon(onShelf)}
-                    </Dropdown>
-                )}
-                {!isMobile && (
-                    <>
-                        <Tooltip title="TBR">
-                            <Button icon={<IconBookmark size={iconSize} />} onClick={tbrClick} type={onShelf === Shelf.TBR ? "primary" : undefined} size={buttonSize} />
-                        </Tooltip>
-
-                        <div className={styles.shelfButtons}>
-                            <Tooltip title="Reading">
-                                <Button icon={<IconBook size={iconSize} />} onClick={readingClick} type={onShelf === Shelf.READING ? "primary" : undefined} size={buttonSize} />
-                            </Tooltip>
-                            {onShelf === Shelf.READING && FormatsComponent}
-                        </div>
-
-                        <div className={styles.shelfButtons}>
-                            <Tooltip title="Read">
-                                <Button icon={<IconBook2 size={iconSize} />} onClick={readClick} type={onShelf === Shelf.READ ? "primary" : undefined} size={buttonSize} />
-                            </Tooltip>
-                            {onShelf === Shelf.READ && FormatsComponent}
-                        </div>
-
-                        <Tooltip title="DNF">
-                            <Button icon={<IconVocabularyOff size={iconSize} />} onClick={dnfClick} type={onShelf === Shelf.DNF ? "primary" : undefined} size={buttonSize} />
-                        </Tooltip>
-
-                        <Tooltip title="Tag">
-                            <Button icon={<IconTag size={iconSize} />} size={buttonSize} onClick={tagClick} />
-                        </Tooltip>
-                    </>
-                )}
+                <BookShelves
+                    iconSize={iconSize}
+                    shelfClick={shelfClick}
+                    buttonSize={buttonSize}
+                    minimized={isMobile}
+                    onShelf={onShelf ? [onShelf] : []}
+                    FormatsComponent={FormatsComponent}
+                    tagClick={tagClick}
+                />
             </div >
             {modalOpen &&
                 <LabelsModal
@@ -252,18 +179,3 @@ export const BookRow = (props: BookRowProps) => {
         </>
     )
 };
-
-const getMenuIcon = (onShelf: Shelf | undefined) => {
-    switch (onShelf) {
-        case Shelf.TBR:
-            return <IconBookmark className={styles.onShelfIcon} />
-        case Shelf.READING:
-            return <IconBook className={styles.onShelfIcon} />
-        case Shelf.READ:
-            return <IconBook2 className={styles.onShelfIcon} />
-        case Shelf.DNF:
-            return <IconVocabularyOff className={styles.onShelfIcon} />
-        default:
-            return <IconPlus />
-    }
-}

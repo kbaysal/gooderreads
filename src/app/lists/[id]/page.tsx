@@ -1,26 +1,41 @@
 "use client"
 
-import { BookFilter } from "@/app/lib/data";
-import { use, useEffect, useState } from "react";
+import { ListInfo } from "@/app/lib/data";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { use, useMemo } from "react";
 import ShelfView from "../../components/ShelfView";
 import { wanttobuyPath, wanttobuyTitle } from "../../lib/helper";
+import { getLists } from "@/app/lib/lists";
+import { useAuth } from "@clerk/nextjs";
 
-export default function TBR(props: { params: Promise<{ id: string }> }) {
+const wanttobuyListInfo: Omit<ListInfo, "userid"> = {
+    id: wanttobuyPath,
+    name: wanttobuyTitle,
+    filters: { wanttobuy: true }
+}
+
+export default function List(props: { params: Promise<{ id: string }> }) {
     const id = use(props.params).id;
-    const [filters, setFilters] = useState<BookFilter>();
-    const [title, setTitle] = useState<string>();
+    const queryClient = useQueryClient();
+    const { userId } = useAuth();
+    const { data: lists } = useQuery({
+        queryKey: ["lists"],
+        queryFn: () => getLists(userId as string),
+        enabled: !!userId
+    });
 
-    useEffect(
+    const list = useMemo(
         () => {
-            if (id == wanttobuyPath) {
-                setFilters({wanttobuy: true});
-                setTitle(wanttobuyTitle);
-            }
+            console.log(id, lists);
+            return id === wanttobuyPath ?
+                wanttobuyListInfo :
+                lists && lists.find((list) => list.id + "" === id)
+
         },
-        [id]
-    )
+        [lists]
+    );
 
     return (
-        id && filters && title && <ShelfView title={title} filter={filters} />
+        id && list && <ShelfView title={list.name} filter={list.filters} listId={id === wanttobuyPath ? undefined : parseInt(id)} />
     )
 }

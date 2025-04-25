@@ -2,13 +2,14 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { IconCarambolaFilled, IconFlameFilled } from "@tabler/icons-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select } from "antd";
 import Modal from "antd/es/modal/Modal";
 import { DefaultOptionType } from "antd/es/select";
 import dayjs, { Dayjs } from 'dayjs';
-import { JSX, useCallback, useEffect, useMemo, useState } from "react";
+import { JSX, useCallback, useMemo } from "react";
 import { useIsMobile } from "../hooks/useWindowDimension";
-import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, LabelFields, updateBook } from "../lib/data";
+import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, updateBook } from "../lib/data";
 import { Format, Shelf } from "../lib/helper";
 import styles from "../styles/labels.module.css";
 import { Formats } from "./FormatButtons";
@@ -26,10 +27,26 @@ interface LabelsModalProps {
 const { RangePicker } = DatePicker;
 
 export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
-    const [bookData, setBookData] = useState<BookData>();
-    const [labels, setLabels] = useState<LabelFields>();
     const { userId } = useAuth();
     const isMobile = useIsMobile();
+    const queryClient = useQueryClient();
+
+    const {data: bookData} = useQuery({
+        queryKey: ["getAllBookInfo", props.bookState.id],
+        queryFn: () => getAllBookInfo(props.bookState.id),
+        enabled: !!props.bookState.id
+    });
+
+    const {data:labels} = useQuery({
+        queryKey: ["getLabels", userId],
+        queryFn: () => getLabels(userId as string),
+        enabled: !!userId
+    });
+
+    const setBookData = useCallback(
+        (book: BookData) => queryClient.setQueryData(["getAllBookInfo", props.bookState.id], book),
+        [queryClient, props.bookState.id]
+    );
 
     const formatsChosen = useMemo(
         () => {
@@ -119,20 +136,6 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         [labels?.labels]
     );
 
-    useEffect(
-        () => {
-            if (props.bookState?.id && userId) {
-                getAllBookInfo(props.bookState.id).then((response) => {
-                    console.log("response", response?.[0]);
-                    setBookData(response?.[0]);
-                });
-                getLabels(userId as string).then((response) => {
-                    setLabels(response?.[0]);
-                })
-            }
-        },
-        [props.bookState?.id, userId]
-    )
 
     const onSave = useCallback(
         () => {
@@ -147,12 +150,12 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         [bookData]
     );
 
-    const onChange = useCallback((info: Dayjs) => bookData ? setBookData({ ...bookData, startdate: (info.toDate()) }) : null, [bookData]);
+    const onChange = useCallback((info: Dayjs) => bookData ? setBookData({ ...bookData, startdate: (info.toDate()) }) : null, [bookData, setBookData]);
     const onRangeChange = useCallback(
         (dates: [Dayjs | null, Dayjs | null] | null) => (
             bookData ? setBookData({ ...bookData, startdate: (dates?.[0]?.toDate()), enddate: (dates?.[0]?.toDate()) }) : null
         ),
-        [bookData]
+        [bookData, setBookData]
     );
 
     const onReleaseDateChange = useCallback(
@@ -162,7 +165,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 setBookData({ ...bookData, releasedate });
             }
         },
-        [bookData]
+        [bookData, setBookData]
     );
 
     const setFormatsChosen = useCallback(
@@ -174,7 +177,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 setBookData({ ...bookData, formats });
             }
         },
-        [bookData]
+        [bookData, setBookData]
     );
     const onRating = useCallback(
         (value: 0 | 5 | null) => {
@@ -183,7 +186,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 setBookData({ ...bookData, rating: value || null });
             }
         },
-        [bookData]
+        [bookData, setBookData]
     );
     const onSpice = useCallback(
         (value: number) => {
@@ -191,7 +194,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 setBookData({ ...bookData, spice: value });
             }
         },
-        [bookData]
+        [bookData, setBookData]
     );
     const onSourceChange = useCallback(
         (sources: string[]) => {
@@ -206,10 +209,10 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 )
             }
         },
-        [bookData, sourceOptions, userId]
+        [bookData, sourceOptions, userId, setBookData]
     );
-    const isOptionalClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, arcoptional: e.target.checked }), [bookData]);
-    const isReviewedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, arcreviewed: e.target.checked }), [bookData]);
+    const isOptionalClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, arcoptional: e.target.checked }), [bookData, setBookData]);
+    const isReviewedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, arcreviewed: e.target.checked }), [bookData, setBookData]);
     const onArcChange = useCallback(
         (arc: string[]) => {
             if (bookData) {
@@ -223,12 +226,12 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 )
             }
         },
-        [bookData, arcOptions, userId]
+        [bookData, arcOptions, userId, setBookData]
     );
 
-    const isDiverseClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, diverse: e.target.checked }), [bookData]);
-    const isBipocClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, bipoc: e.target.checked }), [bookData]);
-    const isLgbtClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, lgbt: e.target.checked }), [bookData]);
+    const isDiverseClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, diverse: e.target.checked }), [bookData, setBookData]);
+    const isBipocClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, bipoc: e.target.checked }), [bookData, setBookData]);
+    const isLgbtClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, lgbt: e.target.checked }), [bookData, setBookData]);
 
     const onDiversityChange = useCallback(
         (diversity: string[]) => {
@@ -243,16 +246,16 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 )
             }
         },
-        [bookData, diversityOptions, userId]
+        [bookData, diversityOptions, userId, setBookData]
     );
 
     const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback(
         (e) => bookData && setBookData({ ...bookData, owned: e.target.checked, wanttobuy: false }),
-        [bookData]
+        [bookData, setBookData]
     );
     const wantToBuyClick: GetProp<typeof Checkbox, 'onChange'> = useCallback(
         (e) => bookData && setBookData({ ...bookData, owned: false, wanttobuy: e.target.checked, boughtyear: null }),
-        [bookData]
+        [bookData, setBookData]
     );
 
     const boughtYearChange = useCallback(
@@ -261,7 +264,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 setBookData({ ...bookData, boughtyear: yearString ? parseInt(yearString) : null });
             }
         },
-        [bookData]
+        [bookData, setBookData]
     );
 
     const onLabelsChange = useCallback(
@@ -281,7 +284,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                 )
             }
         },
-        [bookData, labelsOptions, userId]
+        [bookData, labelsOptions, userId, setBookData]
     );
 
     return (

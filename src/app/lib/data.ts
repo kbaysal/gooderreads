@@ -47,7 +47,18 @@ export interface BookData extends LabelFields {
 }
 
 type BookDataColumn = keyof BookData | "shelf";
-export type BookFilter = Partial<Record<BookDataColumn, unknown>>;
+type BoughtYear = Record<"boughtyear", FilterWithOperator<number>>;
+export interface FilterWithOperator<T> {
+    operator?: "<" | ">" | "=",
+    data?: T
+}
+export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<any> | unknown> & BoughtYear>;
+export interface ListInfo {
+    id: number | string;
+    userid: string;
+    name: string;
+    filters: BookFilter;
+}
 
 export interface EmailInfo {
     bookid: string;
@@ -75,20 +86,20 @@ export async function existsOnShelf(bookIds: string[], userId: string): Promise<
                 INNER JOIN input_bookids i ON i.bookid = b.bookid
             ),
             shelf_lookup AS (
-            SELECT 
-                m.bookid,
-                m.formats,
-                m.id,
-                COALESCE(m.releaseDate, m.releaseDateG) AS releaseDate,
-                CASE
-                    WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
-                    WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
-                    WHEN m.id = ANY((u.shelves).READ) THEN 'READ'
-                    WHEN m.id = ANY((u.shelves).DNF) THEN 'DNF'
-                ELSE NULL
-                END AS shelf
-            FROM matched_books m
-            LEFT JOIN bookUsers u ON u.id = '${userId}'  -- use your user ID here
+                SELECT 
+                    m.bookid,
+                    m.formats,
+                    m.id,
+                    COALESCE(m.releaseDate, m.releaseDateG) AS releaseDate,
+                    CASE
+                        WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
+                        WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
+                        WHEN m.id = ANY((u.shelves).READ) THEN 'READ'
+                        WHEN m.id = ANY((u.shelves).DNF) THEN 'DNF'
+                    ELSE NULL
+                    END AS shelf
+                FROM matched_books m
+                LEFT JOIN bookUsers u ON u.id = '${userId}'  -- use your user ID here
             )
     
             SELECT * FROM shelf_lookup;
@@ -100,7 +111,7 @@ export async function existsOnShelf(bookIds: string[], userId: string): Promise<
         console.log(response);
         return response as firstLookup[];
     } catch (e) {
-        console.error('Error inserting into bookinfo:', e);
+        console.error('Error in existsInShelf:', e);
         throw e;
     }
 }
@@ -155,8 +166,8 @@ export async function addToShelf(
         console.log(response);
         return idFromBooks;
     } catch (e) {
-        console.log(e);
-        return null;
+        console.error('Error in addToShelf:', e);
+        throw e;
     }
 };
 
@@ -207,7 +218,8 @@ export async function editFormats(bookId: string, userId: string, formats: Forma
     }
 }
 
-export async function getAllBookInfo(id: number): Promise<BookData[]> {
+export async function getAllBookInfo(id: number): Promise<BookData | null> {
+    console.log("getAllBookInfo");
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
@@ -216,15 +228,17 @@ export async function getAllBookInfo(id: number): Promise<BookData[]> {
         console.log(query);
         const response = await sql.query(query);
         console.log(response);
-        return response as BookData[];
+        return response.length === 1 ? response[0] as BookData : null;
     } catch (e) {
         console.log(e);
-        return [];
+        throw e;
     }
 }
 
 export async function getBooksWithFilter(userId: string, filter: BookFilter): Promise<firstLookup[]> {
+    console.log("getBooksWithFilter");
     const sql = neon(`${process.env.DATABASE_URL}`);
+    console.log(filter, userId)
     const query = `
         SELECT 
             b.bookid, 
@@ -241,33 +255,21 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE 
-            ${filter.shelf ? (filter.shelf as Shelf[]).map((shelf) => `b.id = ANY((u.shelves).${shelf})`).join(" OR ") : ""}
-            ${(filter.shelf as Shelf[])?.length > 0 ? " AND " : ""}
-            ${(filter.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
+            ${filter?.shelf ? (filter.shelf as Shelf[]).map((shelf) => `b.id = ANY((u.shelves).${shelf})`).join(" OR ") : ""}
+            ${(filter?.shelf as Shelf[])?.length > 0 ? " AND " : ""}
+            ${(filter?.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
+            ${(filter?.owned ? "b.owned = TRUE AND" : "")}
+            ${(filter?.boughtyear ? `b.boughtyear ${filter?.boughtyear.operator} ${filter?.boughtyear.data} AND` : "")}
+            ${filter.formats ? `formats && $1 AND` : ""}
             u.id = '${userId}';
 
     `;
+    const variables = [];
+    if(filter.formats) {
+        variables.push(filter.formats);
+    }
     console.log(query);
-    const response = await sql.query(query);
-    console.log(response);
-    return response as firstLookup[];
-}
-
-export async function getBooksFromShelf(shelf: Shelf, userId: string): Promise<firstLookup[]> {
-    console.log("getbooksfromshelf");
-    const sql = neon(`${process.env.DATABASE_URL}`);
-    const response = await sql.query(`
-        SELECT 
-            b.bookid, 
-            b.id, 
-            b.formats, 
-            '${shelf}' AS shelf,
-            COALESCE(b.releaseDate, b.releaseDateG) AS releaseDate
-        FROM books b
-        JOIN bookUsers u ON u.id = b.userid
-        WHERE b.id = ANY((u.shelves).${shelf})
-        AND u.id = '${userId}';
-    `);
+    const response = await sql.query(query, variables);
     console.log(response);
     return response as firstLookup[];
 }
@@ -319,7 +321,8 @@ export async function updateBook(data: BookData): Promise<void> {
 export const addLabel = async (userId: string, label: string, column: string) => {
     console.log("addLabel");
     const query = `
-    INSERT INTO labels (userid, ${column})
+    INSERT INTO labels (useri
+    d, ${column})
     VALUES ('${userId}', ARRAY['${label}'])
     ON CONFLICT (userid)
     DO UPDATE SET ${column} = (
@@ -342,7 +345,7 @@ export const addLabel = async (userId: string, label: string, column: string) =>
     }
 };
 
-export const getLabels = async (userId: string): Promise<LabelFields[]> => {
+export const getLabels = async (userId: string): Promise<LabelFields | null> => {
     console.log("get labels");
     const query = `
         SELECT * 
@@ -355,10 +358,10 @@ export const getLabels = async (userId: string): Promise<LabelFields[]> => {
         console.log(query);
         const response = await sql.query(query);
         console.log(response);
-        return response as LabelFields[];
+        return response.length === 1 ? response[0] as LabelFields : null;
     } catch (e) {
-        console.log(e);
-        return [];
+        console.error(e);
+        throw e;
     }
 }
 
@@ -422,6 +425,7 @@ export const createBook = async (id: string, title: string, author: string, thum
 }
 
 export const getBookInfo = async (bookIds: string[]): Promise<SimplifiedBook[]> => {
+    console.log("getBookInfo")
     try {
         const query = `
         SELECT * FROM bookinfo
