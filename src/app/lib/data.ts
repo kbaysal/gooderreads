@@ -63,40 +63,46 @@ export interface EmailInfo {
 
 export async function existsOnShelf(bookIds: string[], userId: string): Promise<firstLookup[]> {
     console.log("existsonshelf");
-    const sql = neon(`${process.env.DATABASE_URL}`);
-    const query = `
-        WITH input_bookids(bookid) AS (
-            VALUES ('${bookIds.join("'),('")}')),
-        matched_books AS (
-            SELECT b.id AS id, b.bookid, b.formats, b.releaseDate, b.releasedateg
-            FROM books b
-            INNER JOIN input_bookids i ON i.bookid = b.bookid
-        ),
-        shelf_lookup AS (
-        SELECT 
-            m.bookid,
-            m.formats,
-            m.id,
-            COALESCE(m.releaseDate, m.releaseDateG) AS releaseDate,
-            CASE
-                WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
-                WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
-                WHEN m.id = ANY((u.shelves).READ) THEN 'READ'
-                WHEN m.id = ANY((u.shelves).DNF) THEN 'DNF'
-            ELSE NULL
-            END AS shelf
-        FROM matched_books m
-        LEFT JOIN bookUsers u ON u.id = '${userId}'  -- use your user ID here
-        )
+    try {
 
-        SELECT * FROM shelf_lookup;
-`;
+        const sql = neon(`${process.env.DATABASE_URL}`);
+        const query = `
+            WITH input_bookids(bookid) AS (
+                VALUES ('${bookIds.join("'),('")}')),
+            matched_books AS (
+                SELECT b.id AS id, b.bookid, b.formats, b.releaseDate, b.releasedateg
+                FROM books b
+                INNER JOIN input_bookids i ON i.bookid = b.bookid
+            ),
+            shelf_lookup AS (
+            SELECT 
+                m.bookid,
+                m.formats,
+                m.id,
+                COALESCE(m.releaseDate, m.releaseDateG) AS releaseDate,
+                CASE
+                    WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
+                    WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
+                    WHEN m.id = ANY((u.shelves).READ) THEN 'READ'
+                    WHEN m.id = ANY((u.shelves).DNF) THEN 'DNF'
+                ELSE NULL
+                END AS shelf
+            FROM matched_books m
+            LEFT JOIN bookUsers u ON u.id = '${userId}'  -- use your user ID here
+            )
+    
+            SELECT * FROM shelf_lookup;
+        `;
 
-    console.log(query);
-    const response = await sql.query(query);
+        console.log(query);
+        const response = await sql.query(query);
 
-    console.log(response);
-    return response as firstLookup[];
+        console.log(response);
+        return response as firstLookup[];
+    } catch (e) {
+        console.error('Error inserting into bookinfo:', e);
+        throw e;
+    }
 }
 
 export async function addToShelf(
@@ -236,7 +242,7 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
         JOIN bookUsers u ON u.id = b.userid
         WHERE 
             ${filter.shelf ? (filter.shelf as Shelf[]).map((shelf) => `b.id = ANY((u.shelves).${shelf})`).join(" OR ") : ""}
-            ${(filter.shelf as Shelf[])?.length > 0 ? " AND ": ""}
+            ${(filter.shelf as Shelf[])?.length > 0 ? " AND " : ""}
             ${(filter.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
             u.id = '${userId}';
 

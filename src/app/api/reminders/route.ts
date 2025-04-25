@@ -36,7 +36,7 @@ export async function GET(request: Request) {
                 resend.emails.send({
                     from: 'Gooderreads <onboarding@resend.dev>',
                     to: [email],
-                    subject: "You have ARCs releasing in a week!",
+                    subject: "You have ARCs releasing in 2 weeks!",
                     react: ReminderEmail({ emailBooks: emailInfoArray })
                 });
             }

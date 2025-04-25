@@ -2,6 +2,7 @@
 
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
 import { Spin } from 'antd';
 import { use, useCallback, useEffect, useState } from 'react';
 import { BookRow } from '../components/BookRow';
@@ -16,48 +17,68 @@ export default function Search(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
     const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
-    const [books, setBooks] = useState<Book[]>();
     const [existingShelfLoading, setExistingShelfLoading] = useState(false);
     const { userId } = useAuth();
-
     const q = use(props.searchParams)?.q as string;
+
+    const fetchBooks = useCallback(
+        () => fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
+            async (response) => {
+                const result: BookResponse = await response.json();
+                console.log(result);
+                const resultSet = new Map<string, Book>();
+                if (result?.items?.length > 0) {
+                    result.items = result.items.filter((book) => {
+                        if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
+                            addBook(book);
+                            resultSet.set(book.id, book);
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+
+                return Array.from(resultSet.values());
+            }
+        ),
+        [q]
+    );
+    const { data: books } = useQuery({
+        queryKey: ["search", q],
+        queryFn: fetchBooks,
+        enabled: !!q,
+    });
+
+    const callExistsOnShelf = useCallback(
+        () => {
+            if (books && userId) {
+                return existsOnShelf((books)?.map((book) => book.id) as string[], userId as string);
+            }
+        },
+        [books, userId]
+    );
+    const { data: shelfState } = useQuery({
+        queryKey: ["shelf", { books: (books)?.map((book) => book.id).join(""), userId }],
+        queryFn: callExistsOnShelf,
+        enabled: !!userId && !!books && books.length > 0,
+    });
 
     useEffect(
         () => {
-            fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
-                async (response) => {
-                    setExistingShelfLoading(true);
-                    const result: BookResponse = await response.json();
-                    console.log(result);
-                    const resultSet = new Map<string, Book>();
-                    if (result?.items?.length > 0) {
-                        result.items = result.items.filter((book) => {
-                            if (book.volumeInfo?.title && book.volumeInfo?.authors?.length > 0) {
-                                addBook(book);
-                                resultSet.set(book.id, book);
-                                return true;
-                            }
-                            return false;
-                        });
-
-                        setBooks(Array.from(resultSet.values()));
-
-                        const shelfState = await existsOnShelf(result.items.map((book) => book.id), userId as string);
-                        const shelfMap = new Map<string, firstLookup>();
-                        shelfState.forEach(
-                            (book) => {
-                                shelfMap.set(book.bookid, book);
-                            }
-                        )
-                        setExistingShelves(shelfMap);
-                        setExistingShelfLoading(false);
-                        console.log(shelfMap);
-                        console.log("shelfstate", shelfState);
+            if (shelfState) {
+                const shelfMap = new Map<string, firstLookup>();
+                shelfState.forEach(
+                    (book) => {
+                        shelfMap.set(book.bookid, book);
                     }
-                }
-            );
+                );
+                setExistingShelves(shelfMap);
+                setExistingShelfLoading(false);
+                console.log(shelfMap);
+                console.log("shelfstate", shelfState);
+            }
         },
-        [userId, q]
+        [shelfState]
     );
 
 
