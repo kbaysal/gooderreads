@@ -131,6 +131,7 @@ export async function addToShelf(
     enddate?: string
 ): Promise<number | null> {
     console.log("addtoshelf");
+    
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
@@ -238,7 +239,8 @@ export async function getAllBookInfo(id: number): Promise<BookData | null> {
 export async function getBooksWithFilter(userId: string, filter: BookFilter): Promise<firstLookup[]> {
     console.log("getBooksWithFilter");
     const sql = neon(`${process.env.DATABASE_URL}`);
-    console.log(filter, userId)
+    console.log(filter, userId);
+    let i = 1;
     const query = `
         SELECT 
             b.bookid, 
@@ -260,13 +262,17 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
             ${(filter?.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
             ${(filter?.owned ? "b.owned = TRUE AND" : "")}
             ${(filter?.boughtyear ? `b.boughtyear ${filter?.boughtyear.operator} ${filter?.boughtyear.data} AND` : "")}
-            ${(filter.formats as Format[])?.length > 0 ? `formats && $1 AND` : ""}
+            ${(filter.formats as Format[])?.length > 0 ? `formats && $${i++} AND` : ""}
+            ${(filter?.labels as string[])?.length > 0 ? `labels && $${i++} AND` : ""}
             u.id = '${userId}';
 
     `;
     const variables = [];
-    if(filter.formats) {
+    if((filter.formats as Format[])?.length > 0) {
         variables.push(filter.formats);
+    }
+    if((filter.labels as string[])?.length > 0) {
+        variables.push(filter.labels);
     }
     console.log(query);
     const response = await sql.query(query, variables);
@@ -320,13 +326,13 @@ export async function updateBook(data: BookData): Promise<void> {
 export const addLabel = async (userId: string, label: string, column: string) => {
     console.log("addLabel");
     const query = `
-    INSERT INTO labels (useri
-    d, ${column})
+    INSERT INTO labels (userid, ${column})
     VALUES ('${userId}', ARRAY['${label}'])
     ON CONFLICT (userid)
     DO UPDATE SET ${column} = (
         CASE
-            WHEN NOT ('${label}' = ANY(labels.${column})) THEN array_append(labels.${column}, '${label}')
+            WHEN NOT ('${label}' = ANY(COALESCE(labels.${column}, ARRAY[]::text[])))
+            THEN array_append(COALESCE(labels.${column}, ARRAY[]::text[]), '${label}')
             ELSE labels.${column}
         END
     );

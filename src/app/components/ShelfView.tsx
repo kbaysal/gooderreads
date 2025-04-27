@@ -53,8 +53,8 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
     return (
         <div className={`${styles.page} ${showAsList ? "" : styles.gridPage}`}>
             <Header />
-            <h3 className={styles.todoTitle}>
-                {props.title}{summarizedBookInfo ? ` (${summarizedBookInfo.length})` : ""}:
+            <h3 className={`${styles.todoTitle} ${showAsList ? "" : styles.todoTitleGrid}`}>
+                <span>{props.title}{summarizedBookInfo ? ` (${summarizedBookInfo.length})` : ""}:</span>
                 <Segmented
                     size="middle"
                     shape="round"

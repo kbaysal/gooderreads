@@ -230,8 +230,8 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     );
 
     const isDiverseClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, diverse: e.target.checked }), [bookData, setBookData]);
-    const isBipocClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, bipoc: e.target.checked }), [bookData, setBookData]);
-    const isLgbtClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, lgbt: e.target.checked }), [bookData, setBookData]);
+    const isBipocClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, bipoc: e.target.checked, diverse: bookData.diverse || e.target.checked }), [bookData, setBookData]);
+    const isLgbtClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => bookData && setBookData({ ...bookData, lgbt: e.target.checked, diverse: bookData.diverse || e.target.checked }), [bookData, setBookData]);
 
     const onDiversityChange = useCallback(
         (diversity: string[]) => {
@@ -403,9 +403,9 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
                     <div className={`${styles.selection} ${styles.diversityRows}`}>
                         <span className={styles.title}>Diversity:</span>
                         <div className={styles.stacked}>
-                            <Checkbox onChange={isDiverseClick} defaultChecked={bookData.diverse}>Diverse?</Checkbox>
-                            <Checkbox onChange={isBipocClick} defaultChecked={bookData.bipoc}>BIPOC?</Checkbox>
-                            <Checkbox onChange={isLgbtClick} defaultChecked={bookData.lgbt}>LGBTQIA+?</Checkbox>
+                            <Checkbox onChange={isDiverseClick} checked={bookData.diverse}>Diverse?</Checkbox>
+                            <Checkbox onChange={isBipocClick} checked={bookData.bipoc}>BIPOC?</Checkbox>
+                            <Checkbox onChange={isLgbtClick} checked={bookData.lgbt}>LGBTQIA+?</Checkbox>
                         </div>
                         <Select
                             mode="tags"

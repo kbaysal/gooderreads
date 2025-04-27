@@ -333,7 +333,17 @@
     padding: 0 8px; 
   }
 
-  .bookResults img {
+  .todoTitleGrid {
+    display: grid;
+    grid-template-columns: min-content auto;
+    gap: 16px;
+  }
+  
+  .todoTitleGrid > span {
+    grid-column: 1/3;
+  }
+
+  .bookResults:not(.bookResultsGrid) img {
     max-width: 70px;
   }
 

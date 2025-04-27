@@ -33,9 +33,10 @@ export const wanttobuyTitle = "Want to buy";
 
 export const bookEntry = (userId: string, bookId: string, releaseDateG?: string) => {
     console.log("book entry ")
+    const addReleaseDate = releaseDateG && releaseDateG.length === 10
     return `
-        INSERT INTO books (userId, bookId${releaseDateG ? ", releaseDateG" : ""})
-        VALUES ('${userId}', '${bookId}'${releaseDateG ? `, '${releaseDateG}'` : ""})
+        INSERT INTO books (userId, bookId${addReleaseDate ? ", releaseDateG" : ""})
+        VALUES ('${userId}', '${bookId}'${addReleaseDate ? `, '${releaseDateG}'` : ""})
         ON CONFLICT (userId, bookId)
         DO UPDATE SET bookId = EXCLUDED.bookId  -- or nothing, just prevents error
         RETURNING id;
