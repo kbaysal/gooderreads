@@ -149,6 +149,16 @@
   display: none;
 }
 
+.listToggle :global(.ant-segmented-item-label){
+  height: 33px;
+  display: flex;
+}
+
+.listToggle :global(.ant-segmented-item-icon){
+  display: flex;
+  align-items: center;
+}
+
 .pageLoading {
   height: 100%;
   align-self: center;
@@ -166,9 +176,22 @@
   line-height: 14px;
 }
 
+.bookResultsGrid {
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-auto-rows: max-content;
+}
+
+.bookResultsGrid *:not(img) {
+  display: none;
+}
+
 .bookResults img {
   height: 90px;
   justify-self: center;
+}
+
+.bookResultsGrid img {
+  height: 160px;
 }
 
 .bookInfo {
@@ -249,7 +272,7 @@
 
 .todoTitle {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 4px;
 }
 
