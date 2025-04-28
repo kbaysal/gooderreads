@@ -48,11 +48,12 @@ export interface BookData extends LabelFields {
 
 type BookDataColumn = keyof BookData | "shelf";
 type BoughtYear = Record<"boughtyear", FilterWithOperator<number>>;
+type ReleaseYear = Record<"releasedate", FilterWithOperator<string>>;
 export interface FilterWithOperator<T> {
     operator?: "<" | ">" | "=",
     data?: T
 }
-export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear>;
+export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & ReleaseYear>;
 export interface ListInfo {
     id: number | string;
     userid: string;
@@ -257,14 +258,20 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
         FROM books b
         JOIN bookUsers u ON u.id = b.userid
         WHERE 
+            ${(filter?.shelf as Shelf[])?.length > 0 ? "(" : ""}
             ${filter?.shelf ? (filter.shelf as Shelf[]).map((shelf) => `b.id = ANY((u.shelves).${shelf})`).join(" OR ") : ""}
-            ${(filter?.shelf as Shelf[])?.length > 0 ? " AND " : ""}
+            ${(filter?.shelf as Shelf[])?.length > 0 ? ") AND " : ""}
             ${(filter?.wanttobuy ? "b.wanttobuy = TRUE AND" : "")}
             ${(filter?.owned ? "b.owned = TRUE AND" : "")}
             ${(filter?.boughtyear ? `b.boughtyear ${filter?.boughtyear.operator} ${filter?.boughtyear.data} AND` : "")}
             ${(filter.formats as Format[])?.length > 0 ? `formats && $${i++} AND` : ""}
             ${(filter?.labels as string[])?.length > 0 ? `labels && $${i++} AND` : ""}
-            u.id = '${userId}';
+            ${(filter?.sources as string[])?.length > 0 ? `sources && $${i++} AND` : ""}
+            ${filter.arcreviewed === true || filter.arcreviewed === false ? `(b.arcreviewed = ${filter.arcreviewed ? "TRUE" : "FALSE"} ${!filter.arcreviewed ? " OR b.arcreviewed IS NULL" : ""}) AND ` : ""}
+            ${filter.arcoptional === true || filter.arcoptional === false ? `(b.arcoptional = ${filter.arcoptional ? "TRUE" : "FALSE"} ${!filter.arcoptional ? " OR b.arcoptional IS NULL" : ""}) AND ` : ""}
+            ${filter.releasedate ? `COALESCE(b.releaseDate, b.releaseDateG) ${filter.releasedate.operator} $${i++} AND COALESCE(b.releaseDate, b.releaseDateG) IS NOT NULL AND` : ""}
+            u.id = '${userId}'
+        ORDER BY releaseDate desc;
 
     `;
     const variables = [];
@@ -273,6 +280,13 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
     }
     if((filter.labels as string[])?.length > 0) {
         variables.push(filter.labels);
+    }
+    if((filter.sources as string[])?.length > 0) {
+        variables.push(filter.sources);
+        console.log(filter.sources);
+    }
+    if(filter.releasedate) {
+        variables.push(filter.releasedate.data === "Today" ? "CURRENT_DATE" : filter.releasedate.data);
     }
     console.log(query);
     const response = await sql.query(query, variables);
