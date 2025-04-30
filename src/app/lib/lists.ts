@@ -64,6 +64,7 @@ export async function getLists(userId: string): Promise<ListInfo[]> {
             SELECT * 
             FROM lists
             WHERE lists.userid = '${userId}'
+            ORDER BY lists.id asc
         `;
         console.log(query);
         const sql = neon(`${process.env.DATABASE_URL}`);

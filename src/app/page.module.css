@@ -181,6 +181,10 @@
   grid-auto-rows: max-content;
 }
 
+.bookResultsGrid img {
+  cursor: pointer;
+}
+
 .bookResultsGrid *:not(img) {
   display: none;
 }
@@ -273,7 +277,7 @@
 .todoTitle {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 16px;
 }
 
 .listEditButtons {
@@ -284,7 +288,7 @@
   justify-content: flex-end;
 }
 
-.collapse:first-child {
+.collapse:not(:last-child) {
   margin-bottom: 24px;
 }
 
@@ -294,6 +298,14 @@
   border-color: #14a5f9;
 }
 
+.collapse:nth-child(2),
+.collapse:nth-child(2) > *:first-child,
+.collapse:nth-child(2) :global(.ant-collapse-content) {
+  border-color: #5576eb;
+}
+
+/*6058e2*/
+
 .collapse:last-child,
 .collapse:last-child > *:first-child,
 .collapse:last-child :global(.ant-collapse-content) {
@@ -301,7 +313,7 @@
 }
 
 .collapse :global(.ant-collapse-content-box) {
-  max-height: 45vh;
+  max-height: 60vh;
   overflow: scroll;
 }
 
@@ -333,13 +345,13 @@
     padding: 0 8px; 
   }
 
-  .todoTitleGrid {
+  .todoTitle {
     display: grid;
     grid-template-columns: min-content auto;
     gap: 16px;
   }
   
-  .todoTitleGrid > span {
+  .todoTitle > span {
     grid-column: 1/3;
   }
 

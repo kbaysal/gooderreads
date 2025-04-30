@@ -36,6 +36,19 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
         }
     })
 
+    const onRemove = useCallback(
+        (id: number) => {
+            const cacheId = ["getBooksWithFilter", { filter: props.filter, userId }];
+            const cache: firstLookup[] = [...queryClient.getQueryData(cacheId) as firstLookup[]];
+            console.log(cache.filter((book) => book.id != id));
+            queryClient.setQueryData(
+                cacheId,
+                cache.filter((book) => book.id != id)
+            )
+        },
+        [props.filter, userId, queryClient]
+    );
+
     const onDeleteList = useCallback(
         () => {
             mutation.mutate(props.listId as number);
@@ -75,7 +88,15 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                 <div className={`${styles.bookResults} ${showAsList ? "" : styles.bookResultsGrid}`}>
                     {books.map(
                         (book, index) => {
-                            return <BookRow book={book as Book} key={(book as Book).id} firstState={summarizedBookInfo?.[index] as firstLookup} />
+                            return (
+                                <BookRow
+                                    book={book as Book}
+                                    key={(book as Book).id}
+                                    firstState={summarizedBookInfo?.[index] as firstLookup}
+                                    grid={!showAsList}
+                                    onRemove={onRemove}
+                                />
+                            )
                         }
                     )}
                 </div>

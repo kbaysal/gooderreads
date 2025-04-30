@@ -15,9 +15,10 @@ import styles from "./page.module.css";
 
 const collapsedStyles = [
   { header: { background: "#2baefa08", color: "#2baefa" } },
-  { header: { background: "#4395f308", color: "#4395f3" } },
-  { header: { background: "#5576eb08", color: "#5576eb" } },
-  { header: { background: "#6058e208", color: "#6058e2" } }
+  { header: { background: "#4199f408", color: "#4199f4" } },
+  { header: { background: "#4f83ee08", color: "#4f83ee" } },
+  { header: { background: "#586ee808", color: "#586ee8" } },
+  { header: { background: "#6058e208", color: "#6058e2" } },
 ];
 export default function Home() {
   const [todoIds, setTodoIds] = useState<string[][]>();
@@ -48,6 +49,7 @@ export default function Home() {
         const todoComingNew: string[] = [];
         const todoReviewExpiredNew: string[] = [];
         const todoReviewComingNew: string[] = [];
+        const todoOptionalNew: string[] = [];
         data.forEach((book) => {
           switch (book.todo) {
             case Todo.OverdueToRead:
@@ -62,10 +64,13 @@ export default function Home() {
             case Todo.UpcomingToReview:
               todoReviewComingNew.push(book.bookid);
               break;
+            case Todo.Optional:
+              todoOptionalNew.push(book.bookid);
+              break;
           }
           todoState.set(book.bookid, book);
           setTodoFirstState(todoState);
-          setTodoIds([todoExpiredNew, todoComingNew, todoReviewExpiredNew, todoReviewComingNew]);
+          setTodoIds([todoExpiredNew, todoComingNew, todoReviewExpiredNew, todoReviewComingNew, todoOptionalNew]);
         });
       }
     },
@@ -122,6 +127,20 @@ export default function Home() {
     },
   ];
 
+  const optionalItems: CollapseProps['items'] = [
+    {
+      key: Todo.Optional,
+      styles: collapsedStyles[Todo.Optional],
+      label: (
+        <div className={styles.collapseTitle}>
+          <IconWriting />
+          {`Optional (${todoIds?.[Todo.Optional].length || 0})`}
+        </div>
+      ),
+      children: <TodoSection todolist={todoBooks?.[Todo.Optional]} todoFirstState={todoFirstState} />,
+    }
+  ];
+
   // the last one in the array is the one that was last updated
   const collapseChange = useCallback(
     async (keys: string[]) => {
@@ -156,6 +175,7 @@ export default function Home() {
           <div>
             <Collapse items={toReadItems} onChange={collapseChange} className={styles.collapse} />
             <Collapse items={toReviewItems} onChange={collapseChange} className={styles.collapse} />
+            <Collapse items={optionalItems} onChange={collapseChange} className={styles.collapse} />
           </div>
         </>
       }

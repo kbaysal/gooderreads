@@ -23,7 +23,8 @@ export enum Todo {
     OverdueToRead = 0,
     UpcomingToRead = 1,
     OverdueToReview = 2,
-    UpcomingToReview = 3
+    UpcomingToReview = 3,
+    Optional = 4
 }
 
 export const mobileThreshold = 700;

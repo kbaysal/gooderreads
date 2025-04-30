@@ -46,14 +46,15 @@ export interface BookData extends LabelFields {
     releasedate?: string;
 }
 
-type BookDataColumn = keyof BookData | "shelf";
+type BookDataColumn = keyof BookData | "shelf" | "sort";
 type BoughtYear = Record<"boughtyear", FilterWithOperator<number>>;
 type ReleaseYear = Record<"releasedate", FilterWithOperator<string>>;
-export interface FilterWithOperator<T> {
-    operator?: "<" | ">" | "=",
+type Sort = Record<"sort", FilterWithOperator<keyof BookData, "asc" | "desc">>;
+export interface FilterWithOperator<T, K = "<" | ">" | "="> {
+    operator?: K,
     data?: T
 }
-export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & ReleaseYear>;
+export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & ReleaseYear & Sort>;
 export interface ListInfo {
     id: number | string;
     userid: string;
@@ -269,9 +270,9 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
             ${(filter?.sources as string[])?.length > 0 ? `sources && $${i++} AND` : ""}
             ${filter.arcreviewed === true || filter.arcreviewed === false ? `(b.arcreviewed = ${filter.arcreviewed ? "TRUE" : "FALSE"} ${!filter.arcreviewed ? " OR b.arcreviewed IS NULL" : ""}) AND ` : ""}
             ${filter.arcoptional === true || filter.arcoptional === false ? `(b.arcoptional = ${filter.arcoptional ? "TRUE" : "FALSE"} ${!filter.arcoptional ? " OR b.arcoptional IS NULL" : ""}) AND ` : ""}
-            ${filter.releasedate ? `COALESCE(b.releaseDate, b.releaseDateG) ${filter.releasedate.operator} $${i++} AND COALESCE(b.releaseDate, b.releaseDateG) IS NOT NULL AND` : ""}
+            ${filter.releasedate ? `COALESCE(b.releaseDate, b.releaseDateG) ${filter.releasedate.operator} ${filter.releasedate.data === "Today" ? "CURRENT_DATE" : `'${filter.releasedate.data}'`} AND COALESCE(b.releaseDate, b.releaseDateG) IS NOT NULL AND` : ""}
             u.id = '${userId}'
-        ORDER BY releaseDate desc;
+        ORDER BY ${filter.sort?.data || "releaseDate"} ${filter.sort?.operator || "desc"};
 
     `;
     const variables = [];
@@ -285,10 +286,8 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
         variables.push(filter.sources);
         console.log(filter.sources);
     }
-    if(filter.releasedate) {
-        variables.push(filter.releasedate.data === "Today" ? "CURRENT_DATE" : filter.releasedate.data);
-    }
     console.log(query);
+    console.log(variables);
     const response = await sql.query(query, variables);
     return response as firstLookup[];
 }
@@ -514,7 +513,9 @@ export const getARCTBR = async (userId: string, name?: string, email?: string): 
         return response.map(
             (book: firstLookup) => {
                 const overdueBook = isOverdue(book.releasedate as Date);
-                if (book.shelf === Shelf.READ) {
+                if(book.arcoptional) {
+                    book.todo = Todo.Optional;
+                } else if (book.shelf === Shelf.READ) {
                     book.todo = overdueBook ? Todo.OverdueToReview : Todo.UpcomingToReview;
                 } else {
                     book.todo = overdueBook ? Todo.OverdueToRead : Todo.UpcomingToRead;

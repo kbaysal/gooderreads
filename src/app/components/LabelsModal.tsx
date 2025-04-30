@@ -12,7 +12,9 @@ import { useIsMobile } from "../hooks/useWindowDimension";
 import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, updateBook } from "../lib/data";
 import { Format, Shelf } from "../lib/helper";
 import styles from "../styles/labels.module.css";
+import pageStyles from "../page.module.css";
 import { Formats } from "./FormatButtons";
+import BookShelves from "./BookShelves";
 
 interface LabelsModalProps {
     isOpen: boolean;
@@ -22,6 +24,7 @@ interface LabelsModalProps {
     bookState: firstLookup;
     setFormatsChosen: (f: boolean[]) => void;
     formatsChosen: boolean[];
+    shelfClick(shelf: Shelf): void;
 }
 
 const { RangePicker } = DatePicker;
@@ -31,13 +34,13 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const isMobile = useIsMobile();
     const queryClient = useQueryClient();
 
-    const {data: bookData} = useQuery({
+    const { data: bookData } = useQuery({
         queryKey: ["getAllBookInfo", props.bookState.id],
         queryFn: () => getAllBookInfo(props.bookState.id),
         enabled: !!props.bookState.id
     });
 
-    const {data:labels} = useQuery({
+    const { data: labels } = useQuery({
         queryKey: ["getLabels", userId],
         queryFn: () => getLabels(userId as string),
         enabled: !!userId
@@ -301,6 +304,16 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         >
             {bookData ?
                 (<>
+                    {
+                        <div className={pageStyles.buttons}>
+                            <BookShelves
+                                iconSize={24}
+                                shelfClick={props.shelfClick}
+                                buttonSize="large"
+                                onShelf={props.onShelf ? [props.onShelf] : undefined}
+                            />
+                        </div>
+                    }
                     {props.onShelf === Shelf.READING &&
                         <div className={`${styles.dateSelector} ${styles.selection}`}>
                             <span className={styles.title}>Started reading:</span>

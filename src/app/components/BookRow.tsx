@@ -20,6 +20,8 @@ interface BookRowProps {
     firstState: firstLookup;
     updateId?: (id: number, bookId: string) => void;
     showLabels?: string[];
+    grid?: boolean;
+    onRemove?(bookId: number): void;
 }
 
 const popoverStyles = {
@@ -101,6 +103,7 @@ export const BookRow = (props: BookRowProps) => {
             } else {
                 console.log("removing from", shelf);
                 if (await removeFromShelf(shelf, props.firstState?.id, userId as string)) {
+                    props.onRemove?.(props.firstState?.id);
                     console.log("removed");
                     setOnShelf(undefined);
                 } else {
@@ -130,6 +133,7 @@ export const BookRow = (props: BookRowProps) => {
             <img
                 className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail}
                 alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
+                onClick={props.grid ? tagClick : undefined}
             />
             <div className={styles.bookInfo}>
                 <div className={styles.bookTitle}>
@@ -174,6 +178,7 @@ export const BookRow = (props: BookRowProps) => {
                     bookState={props.firstState}
                     formatsChosen={formatsChosen}
                     setFormatsChosen={setFormatChosen}
+                    shelfClick={shelfClick}
                 />
             }
         </>
