@@ -1,15 +1,16 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
-import { useAuth, useUser } from '@clerk/nextjs';
 import { IconEyeglass2, IconWriting } from '@tabler/icons-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Collapse, CollapseProps, Spin } from 'antd';
 import { memo, useCallback, useEffect, useState } from "react";
+import { getTodo } from './clientqueries/getTodo';
 import { BookRow } from './components/BookRow';
 import Header from './components/Header';
 import { queryForUseBooks } from './hooks/useBooks';
-import { firstLookup, getARCTBR } from "./lib/data";
+import { useGetBooks } from './hooks/useGetBooks';
+import { BookData } from "./lib/data";
 import { Todo } from './lib/helper';
 import styles from "./page.module.css";
 
@@ -23,34 +24,21 @@ const collapsedStyles = [
 export default function Home() {
   const [todoIds, setTodoIds] = useState<string[][]>();
   const [todoBooks, setTodoBooks] = useState<Book[][]>([]);
-  const [todoFirstState, setTodoFirstState] = useState<Map<string, firstLookup>>();
-  const { userId } = useAuth();
-  const { user } = useUser();
+  const [todoFirstState, setTodoFirstState] = useState<Map<string, BookData>>();
   const queryClient = useQueryClient();
-
-  const { data } = useQuery({
-    queryKey: ["getARCTBR", userId],
-    queryFn: () => {
-      const recent = (new Date().valueOf() - (user?.createdAt as Date).valueOf()) < 60000;
-      return getARCTBR(
-        userId as string,
-        recent ? (user?.fullName as string) : undefined,
-        recent ? (user?.primaryEmailAddress?.emailAddress as string) : undefined
-      )
-    },
-    enabled: !!userId && !!user,
-  })
+  const data = useGetBooks();
 
   useEffect(
     () => {
       if (Array.isArray(data) && data?.length > 0) {
-        const todoState = new Map<string, firstLookup>();
+        const todoBooks = getTodo(data);
+        const todoState = new Map<string, BookData>();
         const todoExpiredNew: string[] = [];
         const todoComingNew: string[] = [];
         const todoReviewExpiredNew: string[] = [];
         const todoReviewComingNew: string[] = [];
         const todoOptionalNew: string[] = [];
-        data.forEach((book) => {
+        todoBooks.forEach((book) => {
           switch (book.todo) {
             case Todo.OverdueToRead:
               todoExpiredNew.push(book.bookid);
@@ -183,7 +171,7 @@ export default function Home() {
   );
 }
 
-const TodoSection = memo(function todosection(props: { todolist: Book[] | undefined, todoFirstState: Map<string, firstLookup> | undefined }) {
+const TodoSection = memo(function todosection(props: { todolist: Book[] | undefined, todoFirstState: Map<string, BookData> | undefined }) {
   const { todolist, todoFirstState } = props;
   console.log("TODOSECTUON", todolist)
   return <div className={styles.bookResults}>
@@ -205,7 +193,7 @@ const TodoSection = memo(function todosection(props: { todolist: Book[] | undefi
           <BookRow
             book={book}
             key={book.id}
-            firstState={firstState as firstLookup}
+            bookData={firstState as BookData}
             showLabels={arcLabels}
           />
         )

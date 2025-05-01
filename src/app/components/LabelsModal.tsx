@@ -7,21 +7,21 @@ import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select
 import Modal from "antd/es/modal/Modal";
 import { DefaultOptionType } from "antd/es/select";
 import dayjs, { Dayjs } from 'dayjs';
-import { JSX, useCallback, useMemo } from "react";
+import { JSX, useCallback, useEffect, useMemo } from "react";
 import { useIsMobile } from "../hooks/useWindowDimension";
-import { addLabel, BookData, firstLookup, getAllBookInfo, getLabels, updateBook } from "../lib/data";
-import { Format, Shelf } from "../lib/helper";
-import styles from "../styles/labels.module.css";
+import { addLabel, BookData, getAllBooks, getLabels, updateBook } from "../lib/data";
+import { dateFormat, Format, Shelf } from "../lib/helper";
 import pageStyles from "../page.module.css";
-import { Formats } from "./FormatButtons";
+import styles from "../styles/labels.module.css";
 import BookShelves from "./BookShelves";
+import { Formats } from "./FormatButtons";
+import { useGetBooks } from "../hooks/useGetBooks";
 
 interface LabelsModalProps {
     isOpen: boolean;
     closeModal(): void;
     onShelf: Shelf | undefined;
     book: Book;
-    bookState: firstLookup;
     setFormatsChosen: (f: boolean[]) => void;
     formatsChosen: boolean[];
     shelfClick(shelf: Shelf): void;
@@ -33,12 +33,10 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const { userId } = useAuth();
     const isMobile = useIsMobile();
     const queryClient = useQueryClient();
+    const data = useGetBooks();
+    const bookData = useMemo(() => data?.find((book) => book.bookid === props.book.id), [data, props.book.id]);
 
-    const { data: bookData } = useQuery({
-        queryKey: ["getAllBookInfo", props.bookState.id],
-        queryFn: () => getAllBookInfo(props.bookState.id),
-        enabled: !!props.bookState.id
-    });
+    useEffect(() => console.log("book", bookData), [bookData, data]);
 
     const { data: labels } = useQuery({
         queryKey: ["getLabels", userId],
@@ -47,8 +45,13 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     });
 
     const setBookData = useCallback(
-        (book: BookData) => queryClient.setQueryData(["getAllBookInfo", props.bookState.id], book),
-        [queryClient, props.bookState.id]
+        (book: BookData) => {
+            console.log("huh", book);
+            queryClient.setQueryData(["allBooks", userId], (old: BookData[]) =>
+                old.map(oldBook => oldBook.id === book.id ? book : oldBook)
+            )
+        },
+        [queryClient, userId]
     );
 
     const formatsChosen = useMemo(
@@ -153,10 +156,10 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         [bookData]
     );
 
-    const onChange = useCallback((info: Dayjs) => bookData ? setBookData({ ...bookData, startdate: (info.toDate()) }) : null, [bookData, setBookData]);
+    const onChange = useCallback((info: Dayjs) => bookData ? setBookData({ ...bookData, startdate: (info.format(dateFormat)) }) : null, [bookData, setBookData]);
     const onRangeChange = useCallback(
         (dates: [Dayjs | null, Dayjs | null] | null) => (
-            bookData ? setBookData({ ...bookData, startdate: (dates?.[0]?.toDate()), enddate: (dates?.[0]?.toDate()) }) : null
+            bookData ? setBookData({ ...bookData, startdate: (dates?.[0]?.format(dateFormat)), enddate: (dates?.[1]?.format(dateFormat)) }) : null
         ),
         [bookData, setBookData]
     );
@@ -202,6 +205,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const onSourceChange = useCallback(
         (sources: string[]) => {
             if (bookData) {
+                console.log("sources", sources);
                 setBookData({ ...bookData, sources });
                 sources.forEach(
                     (label) => {
@@ -289,6 +293,8 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         },
         [bookData, labelsOptions, userId, setBookData]
     );
+
+    console.log(bookData?.sources);
 
     return (
         <Modal

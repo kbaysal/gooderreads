@@ -1,31 +1,28 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
-import { useAuth } from "@clerk/nextjs";
 import { IconEdit, IconLayoutGrid, IconListDetails, IconTrash } from '@tabler/icons-react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Segmented, Spin } from "antd";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { getShelf } from '../clientqueries/getShelf';
 import { useBooks } from '../hooks/useBooks';
-import { BookFilter, firstLookup, getBooksWithFilter, ListInfo } from "../lib/data";
+import { useGetBooks } from '../hooks/useGetBooks';
+import { BookData, BookFilter, ListInfo } from "../lib/data";
 import { deleteList } from '../lib/lists';
 import styles from "../page.module.css";
 import { BookRow } from "./BookRow";
 import Header from "./Header";
 
 export default function ShelfView(props: { filter: BookFilter, title: string, listId?: number }) {
-    const { userId } = useAuth();
     const router = useRouter();
     const [showAsList, setShowAsList] = useState(true);
+    const data = useGetBooks();
 
-    const { data: summarizedBookInfo } = useQuery({
-        queryKey: ["getBooksWithFilter", { filter: props.filter, userId }],
-        queryFn: () => getBooksWithFilter(userId as string, props.filter),
-        enabled: !!userId
-    });
-    const { data: books } = useBooks(summarizedBookInfo?.map((book) => book.bookid) || []);
+    const filteredBooks = useMemo(() => data ? getShelf(data, props.filter) : undefined, [data, props.filter]);
+    const { data: books } = useBooks(filteredBooks?.map((book) => book.bookid) || []);
     const queryClient = useQueryClient();
     const mutation = useMutation({
         mutationFn: (id: number) => deleteList(id),
@@ -35,19 +32,6 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
             router.push("/lists");
         }
     })
-
-    const onRemove = useCallback(
-        (id: number) => {
-            const cacheId = ["getBooksWithFilter", { filter: props.filter, userId }];
-            const cache: firstLookup[] = [...queryClient.getQueryData(cacheId) as firstLookup[]];
-            console.log(cache.filter((book) => book.id != id));
-            queryClient.setQueryData(
-                cacheId,
-                cache.filter((book) => book.id != id)
-            )
-        },
-        [props.filter, userId, queryClient]
-    );
 
     const onDeleteList = useCallback(
         () => {
@@ -67,7 +51,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
         <div className={`${styles.page} ${showAsList ? "" : styles.gridPage}`}>
             <Header />
             <h3 className={`${styles.todoTitle} ${showAsList ? "" : styles.todoTitleGrid}`}>
-                <span>{props.title}{summarizedBookInfo ? ` (${summarizedBookInfo.length})` : ""}:</span>
+                <span>{props.title}{filteredBooks ? ` (${filteredBooks.length})` : ""}:</span>
                 <Segmented
                     size="middle"
                     shape="round"
@@ -83,7 +67,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                 }
             </h3>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
-            {summarizedBookInfo?.length === 0 && <div>No books were found matching this list</div>}
+            {filteredBooks?.length === 0 && <div>No books were found matching this list</div>}
             {books &&
                 <div className={`${styles.bookResults} ${showAsList ? "" : styles.bookResultsGrid}`}>
                     {books.map(
@@ -92,10 +76,9 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                                 <BookRow
                                     book={book as Book}
                                     key={(book as Book).id}
-                                    firstState={summarizedBookInfo?.[index] as firstLookup}
+                                    bookData={filteredBooks?.[index] as BookData}
                                     grid={!showAsList}
-                                    onRemove={onRemove}
-                                    showLabels={summarizedBookInfo?.[index].arcoptional ? ["Optional"] : undefined}
+                                    showLabels={filteredBooks?.[index].arcoptional ? ["Optional"] : undefined}
                                 />
                             )
                         }

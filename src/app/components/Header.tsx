@@ -13,6 +13,7 @@ import styles from "../page.module.css";
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getLists } from '../lib/lists';
+import { useGetBooks } from '../hooks/useGetBooks';
 
 const stylesForSignedInButton = {
     elements: {
@@ -28,6 +29,7 @@ const stylesForSignedInButton = {
 
 function Header(props: { q?: string }) {
     const router = useRouter();
+    useGetBooks();
 
     const onEnter = useCallback(
         (e: KeyboardEvent<HTMLInputElement>) => {
@@ -40,7 +42,7 @@ function Header(props: { q?: string }) {
     return (
         <div className={styles.header}>
             <div className={styles.nav}>
-                <UserButton appearance={stylesForSignedInButton} />
+                
                 <Tooltip title="Go to home">
                     <Button variant="text" color="magenta" onClick={onHomeClick}>
                         <IconHome size={32} />
@@ -65,7 +67,8 @@ function Header(props: { q?: string }) {
     );
 };
 
-const Nav = (props: { shelf: Shelf, color: string, className: string, icon: typeof IconBookmark }) => {
+// eslint-disable-next-line react/display-name
+const Nav = memo((props: { shelf: Shelf, color: string, className: string, icon: typeof IconBookmark }) => {
     const path = usePathname();
     const href = `/${(props.shelf.toLowerCase())}`;
     const activePath = path === href;
@@ -105,10 +108,11 @@ const Nav = (props: { shelf: Shelf, color: string, className: string, icon: type
             </ConfigProvider>
         </Tooltip>
     );
-};
+});
 
 
-const SmartList = (props: { color: string }) => {
+// eslint-disable-next-line react/display-name
+const SmartList = memo((props: { color: string }) => {
     const [isHover, setHover] = useState(false);
     const { userId } = useAuth();
     const { data: lists } = useQuery({
@@ -158,6 +162,6 @@ const SmartList = (props: { color: string }) => {
             />
         </Dropdown>
     );
-};
+});
 
 export default memo(Header);

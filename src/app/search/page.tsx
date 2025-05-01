@@ -101,7 +101,7 @@ export default function Search(props: {
                     {books.map(
                         (book) => {
                             const firstState = existingShelves?.get(book.id);
-                            return <BookRow book={book} key={book.id} firstState={firstState as firstLookup} updateId={updateId} />
+                            return <BookRow book={book} key={book.id} bookData={firstState as firstLookup} updateId={updateId} />
                         }
                     )}
                 </div>
