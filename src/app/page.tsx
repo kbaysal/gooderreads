@@ -171,7 +171,7 @@ export default function Home() {
       <Header />
       {todoIds &&
         <>
-          <h3 className={styles.todoTitle}>State of the ARCs:</h3>
+          <h3 className={styles.todoTitle}><span>State of the ARCs:</span></h3>
           <div>
             <Collapse items={toReadItems} onChange={collapseChange} className={styles.collapse} />
             <Collapse items={toReviewItems} onChange={collapseChange} className={styles.collapse} />

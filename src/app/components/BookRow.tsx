@@ -139,7 +139,7 @@ export const BookRow = (props: BookRowProps) => {
                 {props.grid && (
                     <>
                         <span>
-                            {props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}
+                            {props.firstState?.releasedate ? dayjs(props.firstState.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}
                         </span>
                         <div className={styles.tags}>
                             {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
@@ -163,8 +163,8 @@ export const BookRow = (props: BookRowProps) => {
                     {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
                 </div>
                 <div className={styles.metadata}>
-                    {bookInfo.pageCount > 0 && <span>{bookInfo.pageCount}p</span>}
-                    <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}</span>
+                    {bookInfo.pageCount && <span>{bookInfo.pageCount}p</span>}
+                    <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}</span>
                     <span className={styles.publisher}>{bookInfo.publisher}</span>
                     <span>{props.book.saleInfo.country}</span>
                 </div>
