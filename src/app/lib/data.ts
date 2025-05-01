@@ -249,6 +249,7 @@ export async function getBooksWithFilter(userId: string, filter: BookFilter): Pr
             b.id, 
             b.formats, 
             COALESCE(b.releaseDate, b.releaseDateG) AS releaseDate,
+            b.arcoptional,
             CASE
                 WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
                 WHEN b.id = ANY((u.shelves).READING) THEN 'READING'

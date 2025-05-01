@@ -181,11 +181,23 @@
   grid-auto-rows: max-content;
 }
 
+.bookResultsGrid .displayForGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.displayForGrid .tags,
+.displayForGrid .tags > span {
+  margin: 0;
+}
+
 .bookResultsGrid img {
   cursor: pointer;
 }
 
-.bookResultsGrid *:not(img) {
+.bookResultsGrid > *:not(.displayForGrid) {
   display: none;
 }
 

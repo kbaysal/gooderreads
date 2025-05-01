@@ -95,6 +95,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                                     firstState={summarizedBookInfo?.[index] as firstLookup}
                                     grid={!showAsList}
                                     onRemove={onRemove}
+                                    showLabels={summarizedBookInfo?.[index].arcoptional ? ["Optional"] : undefined}
                                 />
                             )
                         }

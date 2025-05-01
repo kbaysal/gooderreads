@@ -129,12 +129,24 @@ export const BookRow = (props: BookRowProps) => {
 
     return (
         <>
-            {/* eslint-disable-next-line @next/next/no-img-element*/}
-            <img
-                className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail}
-                alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
-                onClick={props.grid ? tagClick : undefined}
-            />
+            <div className={styles.displayForGrid}>
+                {/* eslint-disable-next-line @next/next/no-img-element*/}
+                <img
+                    className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail}
+                    alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
+                    onClick={props.grid ? tagClick : undefined}
+                />
+                {props.grid && (
+                    <>
+                        <span>
+                            {props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}
+                        </span>
+                        <div className={styles.tags}>
+                            {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
+                        </div>
+                    </>
+                )}
+            </div>
             <div className={styles.bookInfo}>
                 <div className={styles.bookTitle}>
                     {bookInfo.title}
@@ -151,7 +163,7 @@ export const BookRow = (props: BookRowProps) => {
                     {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
                 </div>
                 <div className={styles.metadata}>
-                    {bookInfo.pageCount && <span>{bookInfo.pageCount}p</span>}
+                    {bookInfo.pageCount > 0 && <span>{bookInfo.pageCount}p</span>}
                     <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).format(dateFormat) : bookInfo.publishedDate}</span>
                     <span className={styles.publisher}>{bookInfo.publisher}</span>
                     <span>{props.book.saleInfo.country}</span>
