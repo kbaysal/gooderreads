@@ -306,7 +306,7 @@ export async function updateBook(data: BookData): Promise<void> {
 
     Object.keys(data).map(
         (field: string) => {
-            if (data[field as BookDataKeyType] !== undefined) {
+            if (data[field as BookDataKeyType] !== undefined && field !== "shelf") {
                 fields.push(`${field} = $${i++}`);
                 values.push(data[field as BookDataKeyType]);
             }

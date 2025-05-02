@@ -73,7 +73,8 @@ export const BookRow = (props: BookRowProps) => {
                 let found = false;
                 console.log("successsss", response, shelf)
                 const newResults = old.map(oldBook => {
-                    if (oldBook.id === props.bookData.id) {
+                    console.log("mapping");
+                    if (oldBook.id === props.bookData?.id) {
                         found = true;
                         console.log("found", { ...oldBook, shelf });
                         return { ...oldBook, shelf };

@@ -6,7 +6,7 @@ import { getAllBooks } from "../lib/data";
 export const useGetBooks = () => {
     const { userId } = useAuth();
     const { user } = useUser();
-    const { data } = useQuery({
+    const { data, isLoading, isError } = useQuery({
         queryKey: ["allBooks", userId],
         queryFn: () => {
             const recent = (new Date().valueOf() - (user?.createdAt as Date).valueOf()) < 60000;
@@ -19,5 +19,5 @@ export const useGetBooks = () => {
         enabled: !!userId && !!user,
     });
 
-    return data;
+    return {data, isLoading, isError};
 }

@@ -26,7 +26,7 @@ export default function Home() {
   const [todoBooks, setTodoBooks] = useState<Book[][]>([]);
   const [todoFirstState, setTodoFirstState] = useState<Map<string, BookData>>();
   const queryClient = useQueryClient();
-  const data = useGetBooks();
+  const { data } = useGetBooks();
 
   useEffect(
     () => {

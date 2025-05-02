@@ -19,7 +19,7 @@ import Header from "./Header";
 export default function ShelfView(props: { filter: BookFilter, title: string, listId?: number }) {
     const router = useRouter();
     const [showAsList, setShowAsList] = useState(true);
-    const data = useGetBooks();
+    const { data } = useGetBooks();
 
     const filteredBooks = useMemo(() => data ? getShelf(data, props.filter) : undefined, [data, props.filter]);
     const { data: books } = useBooks(filteredBooks?.map((book) => book.bookid) || []);

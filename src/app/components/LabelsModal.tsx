@@ -2,20 +2,20 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { IconCarambolaFilled, IconFlameFilled } from "@tabler/icons-react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select } from "antd";
 import Modal from "antd/es/modal/Modal";
 import { DefaultOptionType } from "antd/es/select";
 import dayjs, { Dayjs } from 'dayjs';
 import { JSX, useCallback, useEffect, useMemo } from "react";
+import { useGetBooks } from "../hooks/useGetBooks";
 import { useIsMobile } from "../hooks/useWindowDimension";
-import { addLabel, BookData, getAllBooks, getLabels, updateBook } from "../lib/data";
+import { addLabel, BookData, getLabels, updateBook } from "../lib/data";
 import { dateFormat, Format, Shelf } from "../lib/helper";
 import pageStyles from "../page.module.css";
 import styles from "../styles/labels.module.css";
 import BookShelves from "./BookShelves";
 import { Formats } from "./FormatButtons";
-import { useGetBooks } from "../hooks/useGetBooks";
 
 interface LabelsModalProps {
     isOpen: boolean;
@@ -33,8 +33,22 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const { userId } = useAuth();
     const isMobile = useIsMobile();
     const queryClient = useQueryClient();
-    const data = useGetBooks();
-    const bookData = useMemo(() => data?.find((book) => book.bookid === props.book.id), [data, props.book.id]);
+    const { data } = useGetBooks();
+    const originalBookData = useMemo(() => data?.find((book) => book.bookid === props.book.id), [data, props.book.id]);
+    const [bookData, setBookData] = useMemo(() => { return originalBookData ? { ...originalBookData } : null }, [originalBookData]);
+    const updateBookDataCache = useCallback(
+        (_: void, book: BookData) => {
+            console.log("huh", book);
+            queryClient.setQueryData(["allBooks", userId], (old: BookData[]) =>
+                old.map(oldBook => oldBook.id === book.id ? book : oldBook)
+            )
+        },
+        [queryClient, userId]
+    );
+    const mutation = useMutation({
+        mutationFn: (bookData: BookData) => updateBook(bookData),
+        onSuccess: updateBookDataCache
+    })
 
     useEffect(() => console.log("book", bookData), [bookData, data]);
 
@@ -44,15 +58,6 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         enabled: !!userId
     });
 
-    const setBookData = useCallback(
-        (book: BookData) => {
-            console.log("huh", book);
-            queryClient.setQueryData(["allBooks", userId], (old: BookData[]) =>
-                old.map(oldBook => oldBook.id === book.id ? book : oldBook)
-            )
-        },
-        [queryClient, userId]
-    );
 
     const formatsChosen = useMemo(
         () => {
@@ -148,7 +153,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
             if (bookData) {
                 console.log("saving");
                 console.log(bookData);
-                updateBook(bookData)
+                mutation.mutate(bookData);
                 props.closeModal();
             }
         },
