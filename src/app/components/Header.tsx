@@ -13,7 +13,6 @@ import styles from "../page.module.css";
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getLists } from '../lib/lists';
-import { useGetBooks } from '../hooks/useGetBooks';
 
 const stylesForSignedInButton = {
     elements: {
@@ -29,7 +28,6 @@ const stylesForSignedInButton = {
 
 function Header(props: { q?: string }) {
     const router = useRouter();
-    useGetBooks();
 
     const onEnter = useCallback(
         (e: KeyboardEvent<HTMLInputElement>) => {
@@ -42,7 +40,7 @@ function Header(props: { q?: string }) {
     return (
         <div className={styles.header}>
             <div className={styles.nav}>
-                
+                <UserButton appearance={stylesForSignedInButton} />
                 <Tooltip title="Go to home">
                     <Button variant="text" color="magenta" onClick={onHomeClick}>
                         <IconHome size={32} />
