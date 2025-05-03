@@ -5,7 +5,6 @@ import { dateFormat, Format, Shelf } from "../lib/helper";
 export const getShelf = (books: BookData[], filter: BookFilter) => {
     const filteredBooks = books.filter(
         (book) => {
-            console.log(book);
             if (filter.shelf && filter.shelf.indexOf(book.shelf as Shelf) < 0) {
                 return false;
             }
@@ -66,6 +65,7 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                 return false;
             }
             if (filter.formats && (!book.formats || hasNoneOf(filter.formats, book.formats))) {
+                console.log("formats mismatch", book.formats, filter.formats);
                 return false;
             }
             if (filter.labels && (!book.labels || hasNoneOf(filter.labels, book.labels))) {
@@ -85,10 +85,26 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
         }
     );
 
-    if (filter.sort?.data) {
+    if (filter.sort?.data && filteredBooks.length > 1) {
+        console.log("sorting");
+        console.log(filter.sort?.data, filteredBooks[0][(filter.sort?.data) as keyof BookData], filteredBooks[1][(filter.sort?.data) as keyof BookData]);
         filteredBooks.sort(
-            (a, b) => (a[(filter.sort?.data) as keyof BookData] as number) - (b[(filter.sort?.data) as keyof BookData] as number)
-        )
+            (a, b) => {
+                const key = filter.sort?.data as keyof BookData;
+                const valueA = a[key];
+                const valueB = b[key];
+
+                if (typeof valueA === 'number' && typeof valueB === 'number') {
+                    return valueA - valueB;
+                }
+
+                if (typeof valueA === 'string' && typeof valueB === 'string') {
+                    return valueA.localeCompare(valueB);
+                }
+
+                return String(valueA).localeCompare(String(valueB));
+            }
+        );
     }
 
     return filteredBooks;

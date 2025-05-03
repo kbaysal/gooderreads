@@ -77,6 +77,7 @@ export interface EmailInfo {
     shelf: Shelf;
     reviewdone: boolean;
     thumbnail: string;
+    arcoptional: boolean;
 }
 
 export async function getAllBooks(userId: string, name?: string, email?: string): Promise<BookData[]> {
@@ -108,7 +109,7 @@ export async function getAllBooks(userId: string, name?: string, email?: string)
             (book) => {
                 book.releasedate = dayjs(book.releasedate).format(dateFormat);
                 const overdueBook = isOverdue(book.releasedate as string);
-                if(book.arcoptional) {
+                if (book.arcoptional) {
                     book.todo = Todo.Optional;
                 } else if (book.shelf === Shelf.READ) {
                     book.todo = overdueBook ? Todo.OverdueToReview : Todo.UpcomingToReview;
@@ -120,55 +121,10 @@ export async function getAllBooks(userId: string, name?: string, email?: string)
             }
         ) as BookData[];
 
-        console.log(response);
         return enhancedResponse as BookData[];
 
-    } catch(e) {
-        console.error(e);
-        throw e;
-    }
-}
-
-export async function existsOnShelf(bookIds: string[], userId: string): Promise<firstLookup[]> {
-    console.log("existsonshelf");
-    try {
-
-        const sql = neon(`${process.env.DATABASE_URL}`);
-        const query = `
-            WITH input_bookids(bookid) AS (
-                VALUES ('${bookIds.join("'),('")}')),
-            matched_books AS (
-                SELECT b.id AS id, b.bookid, b.formats, b.releaseDate, b.releasedateg
-                FROM books b
-                INNER JOIN input_bookids i ON i.bookid = b.bookid
-            ),
-            shelf_lookup AS (
-                SELECT 
-                    m.bookid,
-                    m.formats,
-                    m.id,
-                    COALESCE(m.releaseDate, m.releaseDateG) AS releaseDate,
-                    CASE
-                        WHEN m.id = ANY((u.shelves).TBR) THEN 'TBR'
-                        WHEN m.id = ANY((u.shelves).READING) THEN 'READING'
-                        WHEN m.id = ANY((u.shelves).READ) THEN 'READ'
-                        WHEN m.id = ANY((u.shelves).DNF) THEN 'DNF'
-                    ELSE NULL
-                    END AS shelf
-                FROM matched_books m
-                LEFT JOIN bookUsers u ON u.id = '${userId}'  -- use your user ID here
-            )
-    
-            SELECT * FROM shelf_lookup;
-        `;
-
-        console.log(query);
-        const response = await sql.query(query);
-
-        console.log(response);
-        return response as firstLookup[];
     } catch (e) {
-        console.error('Error in existsInShelf:', e);
+        console.error(e);
         throw e;
     }
 }
@@ -188,7 +144,7 @@ export async function addToShelf(
     enddate?: string
 ): Promise<number | null> {
     console.log("addtoshelf");
-    
+
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
@@ -306,7 +262,7 @@ export async function updateBook(data: BookData): Promise<void> {
 
     Object.keys(data).map(
         (field: string) => {
-            if (data[field as BookDataKeyType] !== undefined && field !== "shelf") {
+            if (data[field as BookDataKeyType] !== undefined && field !== "shelf" && field !== "todo") {
                 fields.push(`${field} = $${i++}`);
                 values.push(data[field as BookDataKeyType]);
             }
@@ -394,6 +350,7 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
             u.email,
             b.arcreviewed AS reviewdone,
             bi.thumbnail,
+            b.arcoptional,
             COALESCE(b.releaseDate, b.releaseDateG) AS releasedate,
             CASE
                 WHEN b.id = ANY((u.shelves).TBR) THEN 'TBR'
@@ -406,7 +363,12 @@ export const getUpcomingBooks = async (): Promise<EmailInfo[]> => {
         JOIN bookUsers u ON u.id = b.userid
         JOIN bookinfo bi ON bi.id = b.bookid
         WHERE COALESCE(b.releaseDate, b.releaseDateG) 
-            BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '21 days';
+            BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '21 days'
+            AND (
+                b.id = ANY((u.shelves).TBR) OR 
+                b.id = ANY((u.shelves).READING) OR 
+                b.id = ANY((u.shelves).READ)
+            );
     `;
 
     const sql = neon(`${process.env.DATABASE_URL}`);

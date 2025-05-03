@@ -1,12 +1,12 @@
 "use client"
 
+import { useAuth } from "@clerk/nextjs";
 import { IconBooks, IconDeviceTabletBolt, IconHeadphones } from "@tabler/icons-react";
 import { Button, Tooltip } from "antd";
 import { SizeType } from "antd/es/config-provider/SizeContext";
 import { useCallback, useState } from "react";
 import { editFormats } from "../lib/data";
 import { Format } from "../lib/helper";
-import { useAuth } from "@clerk/nextjs";
 
 type ShapeType = "circle" | "default" | "round" | undefined;
 

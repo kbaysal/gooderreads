@@ -2,17 +2,17 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { IconInfoHexagon } from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, Tag } from "antd";
 import dayjs from "dayjs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks/useWindowDimension";
-import { addToShelf, BookData, removeFromShelf } from "../lib/data";
+import { addToShelf, BookData, getAllBooks, removeFromShelf } from "../lib/data";
 import { dateFormat, Format, Shelf } from "../lib/helper";
 import styles from "../page.module.css";
 import BookShelves from "./BookShelves";
 import { Formats } from "./FormatButtons";
 import { LabelsModal } from "./LabelsModal";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
 
@@ -36,7 +36,6 @@ const popoverStyles = {
 export const BookRow = (props: BookRowProps) => {
     const bookInfo = props.book.volumeInfo;
     const onShelf = props.bookData?.shelf;
-    const [formatsChosen, setFormatChosen] = useState<boolean[]>([false, false, false]);
     const [modalOpen, openModal] = useState(false);
     const isMobile = useIsMobile();
     const iconSize = useMemo(() => getIconSize(isMobile), [isMobile]);
@@ -103,22 +102,25 @@ export const BookRow = (props: BookRowProps) => {
             )
         }
     });
-
-    useEffect(
-        () => {
-            if (props.bookData?.formats) {
-                const formats = [...formatsChosen];
-                props.bookData?.formats.map(
-                    (format: Format) => {
-                        formats[format] = true;
-                    }
-                );
-
-                setFormatChosen(formats);
-            }
+    const { data: formatsChosen } = useQuery({
+        queryKey: ["allBooks", userId],
+        queryFn: () => getAllBooks(userId as string),
+        select: (bookData: BookData[]) => {
+            const book = bookData.find((book: BookData) => book.bookid === props.book.id);
+            const formats = [false, false, false];
+            book?.formats?.forEach((format: Format) => formats[format] = true);
+            return formats
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [props.bookData?.formats]
+        initialData: []
+    });
+    const setFormatChosen = useCallback(
+        (newFormats: boolean[]) => queryClient.setQueryData(["allBooks", userId], (old: BookData[]) => {
+            const newFormatsArray: Format[] = [];
+            newFormats.map((b, i) => b && newFormatsArray.push(i));
+            return old.map((oldBook) => oldBook.bookid === props.book.id ? { ...oldBook, formats: newFormatsArray } as BookData : oldBook)
+        }
+        ),
+        [queryClient, userId, props.book.id]
     );
 
     const shelfClick = useCallback(

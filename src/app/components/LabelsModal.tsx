@@ -7,7 +7,7 @@ import { Button, Checkbox, DatePicker, GetProp, Input, InputNumber, Rate, Select
 import Modal from "antd/es/modal/Modal";
 import { DefaultOptionType } from "antd/es/select";
 import dayjs, { Dayjs } from 'dayjs';
-import { JSX, useCallback, useEffect, useMemo } from "react";
+import { JSX, useCallback, useEffect, useMemo, useState } from "react";
 import { useGetBooks } from "../hooks/useGetBooks";
 import { useIsMobile } from "../hooks/useWindowDimension";
 import { addLabel, BookData, getLabels, updateBook } from "../lib/data";
@@ -35,7 +35,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
     const queryClient = useQueryClient();
     const { data } = useGetBooks();
     const originalBookData = useMemo(() => data?.find((book) => book.bookid === props.book.id), [data, props.book.id]);
-    const [bookData, setBookData] = useMemo(() => { return originalBookData ? { ...originalBookData } : null }, [originalBookData]);
+    const [bookData, setBookData] = useState<BookData>();
     const updateBookDataCache = useCallback(
         (_: void, book: BookData) => {
             console.log("huh", book);
@@ -50,7 +50,7 @@ export const LabelsModal = (props: LabelsModalProps): JSX.Element => {
         onSuccess: updateBookDataCache
     })
 
-    useEffect(() => console.log("book", bookData), [bookData, data]);
+    useEffect(() => setBookData(originalBookData), [originalBookData]);
 
     const { data: labels } = useQuery({
         queryKey: ["getLabels", userId],
