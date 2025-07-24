@@ -2,11 +2,12 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { IconInfoHexagon } from "@tabler/icons-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Popover, Tag } from "antd";
 import dayjs from "dayjs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useIsMobile } from "../hooks/useWindowDimension";
-import { addToShelf, firstLookup, removeFromShelf } from "../lib/data";
+import { addToShelf, BookData, getAllBooks, removeFromShelf } from "../lib/data";
 import { dateFormat, Format, Shelf } from "../lib/helper";
 import styles from "../page.module.css";
 import BookShelves from "./BookShelves";
@@ -17,11 +18,10 @@ const getIconSize = (isMobile: boolean) => isMobile ? 18 : 24;
 
 interface BookRowProps {
     book: Book;
-    firstState: firstLookup;
+    bookData: BookData;
     updateId?: (id: number, bookId: string) => void;
     showLabels?: string[];
     grid?: boolean;
-    onRemove?(bookId: number): void;
 }
 
 const popoverStyles = {
@@ -35,84 +35,110 @@ const popoverStyles = {
 
 export const BookRow = (props: BookRowProps) => {
     const bookInfo = props.book.volumeInfo;
-    const [onShelf, setOnShelf] = useState<Shelf | undefined>(props.firstState?.shelf);
-    const [formatsChosen, setFormatChosen] = useState<boolean[]>([false, false, false]);
+    const onShelf = props.bookData?.shelf;
     const [modalOpen, openModal] = useState(false);
     const isMobile = useIsMobile();
     const iconSize = useMemo(() => getIconSize(isMobile), [isMobile]);
     const buttonSize = useMemo(() => isMobile ? "small" : "middle", [isMobile]);
     const { userId } = useAuth();
-
-    useEffect(
-        () => {
-            if (props.firstState?.formats) {
-                const formats = [...formatsChosen];
-                props.firstState?.formats.map(
-                    (format: Format) => {
-                        formats[format] = true;
+    const queryClient = useQueryClient();
+    const removeFromShelfMutation = useMutation({
+        mutationFn: (shelf: Shelf) => removeFromShelf(shelf, props.bookData.id, userId as string),
+        onSuccess: () => {
+            console.log("removed, shelf undefined")
+            queryClient.setQueryData(["allBooks", userId], (old: BookData[]) =>
+                old.map(oldBook => oldBook.id === props.bookData.id ? { ...oldBook, shelf: undefined } : oldBook)
+            )
+        }
+    });
+    const addToShelfMutation = useMutation({
+        mutationFn: (shelf: Shelf) => addToShelf(
+            shelf,
+            props.bookData?.id,
+            props.book?.id,
+            userId as string,
+            bookInfo.title,
+            bookInfo.authors.join(", "),
+            bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail,
+            bookInfo.pageCount,
+            bookInfo.publisher,
+            bookInfo.publishedDate,
+            shelf === Shelf.READING ? dayjs().format(dateFormat) : undefined,
+            shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined,
+        ),
+        onSuccess: (response, shelf) => {
+            console.log("what");
+            queryClient.setQueryData(["allBooks", userId], (old: BookData[]) => {
+                let found = false;
+                console.log("successsss", response, shelf)
+                const newResults = old.map(oldBook => {
+                    console.log("mapping");
+                    if (oldBook.id === props.bookData?.id) {
+                        found = true;
+                        console.log("found", { ...oldBook, shelf });
+                        return { ...oldBook, shelf };
                     }
-                );
+                    return oldBook;
+                });
+                console.log("found", found);
+                if (!found) {
+                    const newBook: BookData = {
+                        id: response as number,
+                        userid: userId as string,
+                        bookid: props.book.id,
+                        shelf,
+                        releasedate: bookInfo.publishedDate,
+                        startdate: shelf === Shelf.READING ? dayjs().format(dateFormat) : undefined,
+                        enddate: shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined
+                    };
+                    console.log("not found", newBook);
+                    props.updateId?.(response as number, props.book?.id);
+                    return [...old, newBook];
+                }
 
-                setFormatChosen(formats);
+                return newResults;
             }
+
+            )
+        }
+    });
+    const { data: formatsChosen } = useQuery({
+        queryKey: ["allBooks", userId],
+        queryFn: () => getAllBooks(userId as string),
+        select: (bookData: BookData[]) => {
+            const book = bookData.find((book: BookData) => book.bookid === props.book.id);
+            const formats = [false, false, false];
+            book?.formats?.forEach((format: Format) => formats[format] = true);
+            return formats
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [props.firstState?.formats]
+        initialData: []
+    });
+    const setFormatChosen = useCallback(
+        (newFormats: boolean[]) => queryClient.setQueryData(["allBooks", userId], (old: BookData[]) => {
+            const newFormatsArray: Format[] = [];
+            newFormats.map((b, i) => b && newFormatsArray.push(i));
+            return old.map((oldBook) => oldBook.bookid === props.book.id ? { ...oldBook, formats: newFormatsArray } as BookData : oldBook)
+        }
+        ),
+        [queryClient, userId, props.book.id]
     );
-
-    useEffect(
-        () => {
-            if (props.firstState?.shelf) {
-                setOnShelf(props.firstState?.shelf);
-            }
-        },
-        [props.firstState?.shelf]
-    )
 
     const shelfClick = useCallback(
         async (shelf: Shelf) => {
             if (onShelf !== shelf) {
                 if (onShelf) {
                     console.log("removing from existing", onShelf);
-                    await removeFromShelf(onShelf, props.firstState?.id, userId as string);
+                    removeFromShelfMutation.mutate(onShelf);
                 }
-                console.log("adding to", shelf, props.firstState?.id);
-                const response = await addToShelf(
-                    shelf,
-                    props.firstState?.id,
-                    props.book?.id,
-                    userId as string,
-                    bookInfo.title,
-                    bookInfo.authors.join(", "),
-                    bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail,
-                    bookInfo.pageCount,
-                    bookInfo.publisher,
-                    bookInfo.publishedDate,
-                    shelf === Shelf.READING ? dayjs().format(dateFormat) : undefined,
-                    shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined,
-                );
-                if (response) {
-                    console.log("success", props.firstState?.id, response);
-                    if (!props.firstState?.id) {
-                        props.updateId?.(response, props.book?.id);
-                    }
-                    setOnShelf(shelf);
-                } else {
-                    console.log("failure");
-                }
+                console.log("adding to", shelf, props.bookData?.id);
+                addToShelfMutation.mutate(shelf);
             } else {
                 console.log("removing from", shelf);
-                if (await removeFromShelf(shelf, props.firstState?.id, userId as string)) {
-                    props.onRemove?.(props.firstState?.id);
-                    console.log("removed");
-                    setOnShelf(undefined);
-                } else {
-                    console.log("failed removing");
-                }
+                removeFromShelfMutation.mutate(shelf);
             }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [props.firstState?.id, onShelf, props.book.id, props.updateId, userId]
+        [props.bookData?.id, onShelf, props.book.id, props.updateId, userId]
     );
 
     const tagClick = useCallback(() => openModal(true), []);
@@ -139,7 +165,7 @@ export const BookRow = (props: BookRowProps) => {
                 {props.grid && (
                     <>
                         <span>
-                            {props.firstState?.releasedate ? dayjs(props.firstState.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}
+                            {props.bookData?.releasedate ? dayjs(props.bookData.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}
                         </span>
                         <div className={styles.tags}>
                             {props.showLabels?.map(label => <Tag bordered={false} color="geekblue" key={label} closable>{label}</Tag>)}
@@ -164,7 +190,7 @@ export const BookRow = (props: BookRowProps) => {
                 </div>
                 <div className={styles.metadata}>
                     {bookInfo.pageCount && <span>{bookInfo.pageCount}p</span>}
-                    <span>{props.firstState?.releasedate ? dayjs(props.firstState.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}</span>
+                    <span>{props.bookData?.releasedate ? dayjs(props.bookData.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}</span>
                     <span className={styles.publisher}>{bookInfo.publisher}</span>
                     <span>{props.book.saleInfo.country}</span>
                 </div>
@@ -187,7 +213,6 @@ export const BookRow = (props: BookRowProps) => {
                     closeModal={closeModal}
                     onShelf={onShelf}
                     book={props.book}
-                    bookState={props.firstState}
                     formatsChosen={formatsChosen}
                     setFormatsChosen={setFormatChosen}
                     shelfClick={shelfClick}

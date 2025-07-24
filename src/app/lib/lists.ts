@@ -69,7 +69,6 @@ export async function getLists(userId: string): Promise<ListInfo[]> {
         console.log(query);
         const sql = neon(`${process.env.DATABASE_URL}`);
         const response = await sql.query(query);
-        console.log(response);
         return response as ListInfo[];
     } catch (e) {
         console.error("Error in getLists", e);

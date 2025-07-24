@@ -2,13 +2,14 @@
 
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '@clerk/nextjs';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Spin } from 'antd';
-import { use, useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useMemo } from 'react';
 import { BookRow } from '../components/BookRow';
 import Header from '../components/Header';
 import { addBook } from '../hooks/booksCache';
-import { existsOnShelf, firstLookup } from '../lib/data';
+import { useGetBooks } from '../hooks/useGetBooks';
+import { BookData } from '../lib/data';
 import styles from "../page.module.css";
 
 const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA&maxResults=20&printType=books&q=";
@@ -16,11 +17,9 @@ const googleURLForTitle = "https://www.googleapis.com/books/v1/volumes?key=AIzaS
 export default function Search(props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const [existingShelves, setExistingShelves] = useState<Map<string, firstLookup>>();
-    const [existingShelfLoading, setExistingShelfLoading] = useState(false);
     const { userId } = useAuth();
     const q = use(props.searchParams)?.q as string;
-
+    const queryClient = useQueryClient();
     const fetchBooks = useCallback(
         () => fetch(`${googleURLForTitle}${encodeURI(q)}`).then(
             async (response) => {
@@ -43,65 +42,55 @@ export default function Search(props: {
         ),
         [q]
     );
-    const { data: books } = useQuery({
+    const { data: books, isLoading: searchLoading } = useQuery({
         queryKey: ["search", q],
         queryFn: fetchBooks,
         enabled: !!q,
     });
-
-    const callExistsOnShelf = useCallback(
-        () => {
-            if (books && userId) {
-                return existsOnShelf((books)?.map((book) => book.id) as string[], userId as string);
-            }
-        },
-        [books, userId]
-    );
-    const { data: shelfState } = useQuery({
-        queryKey: ["shelf", { books: (books)?.map((book) => book.id).join(""), userId }],
-        queryFn: callExistsOnShelf,
-        enabled: !!userId && !!books && books.length > 0,
-    });
-
-    useEffect(
-        () => {
-            if (shelfState) {
-                const shelfMap = new Map<string, firstLookup>();
-                shelfState.forEach(
-                    (book) => {
-                        shelfMap.set(book.bookid, book);
+    const { data, isLoading: shelvesLoading } = useGetBooks();
+    const existingShelves = useMemo(() => {
+        if (data && books) {
+            const shelfMap = new Map<string, BookData>();
+            books.forEach(
+                (book) => {
+                    const bookData = data.find((shelfBook) => shelfBook.bookid === book.id);
+                    if (bookData) {
+                        shelfMap.set(book.id, bookData);
                     }
-                );
-                setExistingShelves(shelfMap);
-                setExistingShelfLoading(false);
-                console.log(shelfMap);
-                console.log("shelfstate", shelfState);
-            }
-        },
-        [shelfState]
-    );
-
+                }
+            );
+            return shelfMap;
+        }
+    }, [data, books]);
 
 
     const updateId = useCallback(
         (id: number, bookId: string) => {
-            const newExistingShelves = new Map(existingShelves);
-            newExistingShelves.set(bookId, { ...newExistingShelves.get(bookId) as firstLookup, id });
-            setExistingShelves(newExistingShelves);
+            queryClient.setQueryData(["allBooks", userId], ((oldData: BookData[] | undefined) => {
+                if (!oldData) return oldData;
+                const updatedData = oldData.map((book) => {
+                    if (book.bookid === bookId) {
+                        return { ...book, id };
+                    }
+                    return book;
+                });
+                return updatedData;
+            })
+            )
         },
-        [existingShelves]
+        [userId, queryClient]
     );
 
     return (
         <div className={styles.page}>
             <Header q={q} />
-            {existingShelfLoading && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
-            {books && !existingShelfLoading &&
+            {(shelvesLoading || searchLoading) && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
+            {books && !shelvesLoading &&
                 <div className={styles.bookResults}>
                     {books.map(
                         (book) => {
-                            const firstState = existingShelves?.get(book.id);
-                            return <BookRow book={book} key={book.id} firstState={firstState as firstLookup} updateId={updateId} />
+                            const bookData = existingShelves?.get(book.id);
+                            return <BookRow book={book} key={book.id} bookData={bookData as BookData} updateId={updateId} />
                         }
                     )}
                 </div>

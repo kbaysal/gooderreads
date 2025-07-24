@@ -5,14 +5,20 @@ import { Shelf, ShelfPriority } from "../lib/helper";
 export const ReminderEmail = (props: { emailBooks: EmailInfo[] }) => {
     const emailInfoArray = props.emailBooks;
     const tableData: EmailInfo[][] = [];
+    const optionalData: EmailInfo[] = [];
+    let index = 0;
     emailInfoArray?.sort(todoSort).map(
-        (emailInfo, index) => {
-            const row = Math.floor(index / 3);
-            if (index % 3 === 0) {
-                tableData[row] = [];
+        (emailInfo) => {
+            if(!emailInfo.arcoptional) {
+                const row = Math.floor(index / 3);
+                if (index % 3 === 0) {
+                    tableData[row] = [];
+                }
+                tableData[row].push(emailInfo);
+                index++;
+            } else {
+                optionalData.push(emailInfo);
             }
-
-            tableData[row].push(emailInfo);
         }
     )
     return (
@@ -39,26 +45,33 @@ export const ReminderEmail = (props: { emailBooks: EmailInfo[] }) => {
                             </tr>
                             <tr key={index}>
                                 {row.map(
-                                    (book) =>
-                                        <td key={book.bookid} style={{ verticalAlign: "top", padding: "4px 12px 12px 0", maxWidth: 0 }}>
-                                            <div>
-                                                <b>{shelfLabel[book.shelf](book.reviewdone)}</b>
-                                            </div>
-                                            <div style={{ color: "#9e1068", fontWeight: 600 }}>
-                                                {book.title}
-                                            </div>
-                                            <div style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>
-                                                {book.author}
-                                            </div>
-                                            <div style={{ fontSize: 10 }}>
-                                                {dayjs(book.releasedate).format("MMMM D")}
-                                            </div>
-                                        </td>
+                                    (book) =>{
+                                        console.log(book.shelf, book);
+                                        return <td key={book.bookid} style={{ verticalAlign: "top", padding: "4px 12px 12px 0", maxWidth: 0 }}>
+                                        <div>
+                                            <b>{shelfLabel[book.shelf](book.reviewdone)}</b>
+                                        </div>
+                                        <div style={{ color: "#9e1068", fontWeight: 600 }}>
+                                            {book.title}
+                                        </div>
+                                        <div style={{ fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>
+                                            {book.author}
+                                        </div>
+                                        <div style={{ fontSize: 10 }}>
+                                            {dayjs(book.releasedate).format("MMMM D")}
+                                        </div>
+                                    </td>
+                                    }
+                                        
                                 )}
                             </tr>
                         </>
                 )}
             </table>
+            <h3 style={{ fontWeight: "normal", marginBottom: 4 }}>Optional reads:</h3>
+            <ul style={{margin: 0, paddingLeft: 12}}>
+                {optionalData.map((book, index) => <li key={index}>{book.title} by {book.author} on {dayjs(book.releasedate).format("MMMM D")}</li>)}
+            </ul>
         </div>
     )
 }
