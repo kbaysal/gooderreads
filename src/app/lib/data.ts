@@ -1,8 +1,7 @@
 'use server';
 
 import { neon } from '@neondatabase/serverless';
-import { bookEntry, dateFormat, Format, Shelf, Todo } from './helper';
-import dayjs from 'dayjs';
+import { bookEntry, Format, Shelf, Todo } from './helper';
 
 export interface firstLookup {
     id: number;
@@ -29,6 +28,7 @@ export interface LabelFields {
 export interface BookData extends LabelFields {
     id: number;
     bookid: string;
+    todo?: Todo;
     shelf?: Shelf;
     startdate?: string;
     enddate?: string;
@@ -45,7 +45,6 @@ export interface BookData extends LabelFields {
     boughtyear?: number | null;
     releasedateG?: string;
     releasedate?: string;
-    todo?: Todo;
 }
 
 type BookDataColumn = keyof BookData | "shelf" | "sort";
@@ -103,26 +102,7 @@ export async function getAllBooks(userId: string, name?: string, email?: string)
         ORDER BY b.id desc;
         `;
         const sql = neon(`${process.env.DATABASE_URL}`);
-        const response = (await sql.query(query)) as BookData[];
-
-        const enhancedResponse = response.map(
-            (book) => {
-                book.releasedate = dayjs(book.releasedate).format(dateFormat);
-                const overdueBook = isOverdue(book.releasedate as string);
-                if (book.arcoptional) {
-                    book.todo = Todo.Optional;
-                } else if (book.shelf === Shelf.READ) {
-                    book.todo = overdueBook ? Todo.OverdueToReview : Todo.UpcomingToReview;
-                } else {
-                    book.todo = overdueBook ? Todo.OverdueToRead : Todo.UpcomingToRead;
-                }
-
-                return book;
-            }
-        ) as BookData[];
-
-        return enhancedResponse as BookData[];
-
+        return (await sql.query(query)) as BookData[];
     } catch (e) {
         console.error(e);
         throw e;
@@ -423,13 +403,3 @@ export const createUser = async (userId: string, name: string, email: string): P
         return false;
     }
 }
-
-const twoWeeksAgo = dayjs().subtract(2, 'week');
-const isOverdue = (releaseDate: string | Date) => {
-    if (dayjs(releaseDate).isBefore(twoWeeksAgo)) {
-        return true;
-    }
-
-    return false;
-}
-
