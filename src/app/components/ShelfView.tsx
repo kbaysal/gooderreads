@@ -1,7 +1,7 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
-import { IconEdit, IconLayoutGrid, IconListDetails, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconLayoutGrid, IconListDetails, IconTrash, IconChartPie2 } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Segmented, Spin } from "antd";
 import Link from 'next/link';
@@ -15,10 +15,17 @@ import { deleteList } from '../lib/lists';
 import styles from "../page.module.css";
 import { BookRow } from "./BookRow";
 import Header from "./Header";
+import ShelfGraphs from './ShelfGraphs';
+
+enum ShowAs {
+    list = "list",
+    grid = "grid",
+    graph = "graph"
+}
 
 export default function ShelfView(props: { filter: BookFilter, title: string, listId?: number }) {
     const router = useRouter();
-    const [showAsList, setShowAsList] = useState(true);
+    const [showAs, setShowAs] = useState(ShowAs.list);
     const { data } = useGetBooks();
 
     const filteredBooks = useMemo(() => data ? getShelf(data, props.filter) : undefined, [data, props.filter]);
@@ -42,15 +49,15 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
 
     const listStyleChange = useCallback(
         (value: string) => {
-            setShowAsList(value === "list");
+            setShowAs(ShowAs[value as keyof typeof ShowAs]);
         },
         []
     )
 
     return (
-        <div className={`${styles.page} ${showAsList ? "" : styles.gridPage}`}>
+        <div className={`${styles.page} ${showAs === ShowAs.list ? "" : styles.gridPage}`}>
             <Header />
-            <h3 className={`${styles.todoTitle} ${showAsList ? "" : styles.todoTitleGrid}`}>
+            <h3 className={`${styles.todoTitle} ${showAs === ShowAs.list ? "" : styles.todoTitleGrid}`}>
                 <span>{props.title}{filteredBooks ? ` (${filteredBooks.length})` : ""}:</span>
                 <Segmented
                     size="middle"
@@ -68,8 +75,8 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
             </h3>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
             {filteredBooks?.length === 0 && <div>No books were found matching this list</div>}
-            {books &&
-                <div className={`${styles.bookResults} ${showAsList ? "" : styles.bookResultsGrid}`}>
+            {books && showAs !== ShowAs.graph &&
+                <div className={`${styles.bookResults} ${showAs === ShowAs.list ? "" : styles.bookResultsGrid}`}>
                     {books.map(
                         (book, index) => {
                             return (
@@ -77,7 +84,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                                     book={book as Book}
                                     key={(book as Book).id}
                                     bookData={filteredBooks?.[index] as BookData}
-                                    grid={!showAsList}
+                                    grid={showAs === ShowAs.grid}
                                     showLabels={filteredBooks?.[index].arcoptional ? ["Optional"] : undefined}
                                 />
                             )
@@ -85,11 +92,15 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                     )}
                 </div>
             }
+            {books && filteredBooks && showAs === ShowAs.graph &&
+                <ShelfGraphs books={books} bookData={filteredBooks}/>
+            }
         </div>
     )
 }
 
 const ListStyleOptions = [
-    { value: 'list', icon: <IconListDetails /> },
-    { value: 'grid', icon: <IconLayoutGrid /> }
+    { value: ShowAs.list, icon: <IconListDetails /> },
+    { value: ShowAs.grid, icon: <IconLayoutGrid /> },
+    { value: ShowAs.graph, icon: <IconChartPie2 /> }
 ];

@@ -27,8 +27,6 @@ export async function GET(request: Request) {
         }
     )
 
-
-
     await Promise.all(
         Array.from(emailData.entries()).map(
             (data) => {

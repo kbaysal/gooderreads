@@ -31,7 +31,7 @@ export interface BookData extends LabelFields {
     todo?: Todo;
     shelf?: Shelf;
     startdate?: string;
-    enddate?: string;
+    enddate?: Date | string;
     formats?: Format[];
     rating?: number | null;
     spice?: number | null;
@@ -50,6 +50,7 @@ export interface BookData extends LabelFields {
 type BookDataColumn = keyof BookData | "shelf" | "sort";
 type BoughtYear = Record<"boughtyear", FilterWithOperator<number>>;
 type ReleaseYear = Record<"releasedate", FilterWithOperator<string>>;
+type EndDate = Record<"enddate", FilterWithOperator<string>>;
 type Sort = Record<"sort", FilterWithOperator<keyof BookData, "asc" | "desc">>;
 type ShelfFilter = Record<"shelf", Shelf[]>;
 type FormatsFilter = Record<"formats", Format[]>;
@@ -58,7 +59,7 @@ export interface FilterWithOperator<T, K = "<" | ">" | "="> {
     operator?: K,
     data?: T
 }
-export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & ReleaseYear & Sort & ShelfFilter & LabelFilter & FormatsFilter>;
+export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & EndDate & ReleaseYear & Sort & ShelfFilter & LabelFilter & FormatsFilter>;
 export interface ListInfo {
     id: number | string;
     userid: string;

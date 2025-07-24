@@ -37,6 +37,23 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                 return false;
             }
             if (
+                filter.enddate?.data
+            ) {
+                if (!book.enddate) {
+                    return false;
+                }
+                const enddate = typeof book.enddate !== "string" ? dayjs(book.enddate).format(dateFormat) : book.enddate;
+                const filterDateString = filter.enddate.data === "Today" ? dayjs().format(dateFormat) : filter.enddate.data;
+                if (filter.enddate.operator === ">" ?
+                    enddate <= filterDateString :
+                    filter.enddate?.operator === "<" ?
+                        enddate >= filterDateString :
+                        enddate !== filterDateString
+                ) {
+                    return false;
+                }
+            }
+            if (
                 filter.releasedate?.data
             ) {
                 if (!book.releasedate) {
@@ -85,6 +102,9 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
         }
     );
 
+    console.log("getting shelf, filter");
+    console.log(filter);
+
     if (filter.sort?.data && filteredBooks.length > 1) {
         console.log("sorting");
         console.log(filter.sort?.data, filteredBooks[0][(filter.sort?.data) as keyof BookData], filteredBooks[1][(filter.sort?.data) as keyof BookData]);
@@ -100,6 +120,19 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
 
                 if (typeof valueA === 'string' && typeof valueB === 'string') {
                     return valueA.localeCompare(valueB);
+                }
+
+                if (typeof valueA === "object" && typeof valueB === "object") {
+                    // These should be date objects
+                    const dateA = dayjs(valueA as unknown as Date);
+                    const dateB = dayjs(valueB as unknown as Date);
+                    console.log("dateA", dateA, "dateB", dateB, "sorting", filter.sort?.operator);
+                    return (
+                        dateA.isBefore(dateB) ?
+                            (filter.sort?.operator === "asc" ? -1 : 1) :
+                            dateA.isAfter(dateB) ?
+                                (filter.sort?.operator === "asc" ? 1 : -1) :
+                                0);
                 }
 
                 return String(valueA).localeCompare(String(valueB));
