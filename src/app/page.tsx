@@ -141,7 +141,7 @@ export default function Home() {
             }
           )).then(
             (books) => {
-              if (!(books?.[0] as BookError).error) {
+              if (!(books?.[0]).error) {
                 const newTodoBooks = [...todoBooks];
                 newTodoBooks[todo] = books as Book[];
                 setTodoBooks(newTodoBooks);
