@@ -59,7 +59,7 @@ export const BookRow = (props: BookRowProps) => {
             userId as string,
             bookInfo.title,
             bookInfo.authors.join(", "),
-            bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail,
+            bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail ?? "",
             bookInfo.pageCount,
             bookInfo.publisher,
             bookInfo.publishedDate,
@@ -158,7 +158,7 @@ export const BookRow = (props: BookRowProps) => {
             <div className={styles.displayForGrid}>
                 {/* eslint-disable-next-line @next/next/no-img-element*/}
                 <img
-                    className={styles.bookImg} src={bookInfo.imageLinks?.smallThumbnail ?? bookInfo.imageLinks?.thumbnail}
+                    className={styles.bookImg} src={bookInfo?.imageLinks?.smallThumbnail ?? bookInfo?.imageLinks?.thumbnail ?? null}
                     alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
                     onClick={props.grid ? tagClick : undefined}
                 />
@@ -192,7 +192,7 @@ export const BookRow = (props: BookRowProps) => {
                     {bookInfo.pageCount && <span>{bookInfo.pageCount}p</span>}
                     <span>{props.bookData?.releasedate ? dayjs(props.bookData.releasedate).add(1, "day").format(dateFormat) : bookInfo.publishedDate}</span>
                     <span className={styles.publisher}>{bookInfo.publisher}</span>
-                    <span>{props.book.saleInfo.country}</span>
+                    <span>{props.book?.saleInfo?.country}</span>
                 </div>
             </div>
             <div className={styles.buttons}>

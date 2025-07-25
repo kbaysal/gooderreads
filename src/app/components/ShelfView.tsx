@@ -54,6 +54,13 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
         []
     )
 
+    console.log("books", books);
+    console.log("filteredBooks", filteredBooks);
+
+    if (filteredBooks?.length !== books?.length) {
+        return null;
+    }
+
     return (
         <div className={`${styles.page} ${showAs === ShowAs.list ? "" : styles.gridPage}`}>
             <Header />
@@ -79,6 +86,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                 <div className={`${styles.bookResults} ${showAs === ShowAs.list ? "" : styles.bookResultsGrid}`}>
                     {books.map(
                         (book, index) => {
+                            console.log("book", book);
                             return (
                                 <BookRow
                                     book={book as Book}
@@ -93,7 +101,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                 </div>
             }
             {books && filteredBooks && showAs === ShowAs.graph &&
-                <ShelfGraphs books={books} bookData={filteredBooks}/>
+                <ShelfGraphs books={books} bookData={filteredBooks} />
             }
         </div>
     )

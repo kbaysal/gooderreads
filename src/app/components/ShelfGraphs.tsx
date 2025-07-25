@@ -44,10 +44,10 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
     ];
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 48, marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 48, marginTop: 24, flexWrap: 'wrap' }}>
             <div>
                 <h4 style={{ marginBottom: 36, textAlign: "center" }}>Books by Release Month</h4>
-                <BarChart width={400} height={300} data={monthData}>
+                <BarChart width={300} height={300} data={monthData}>
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
@@ -63,7 +63,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                         data={diverseData}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        outerRadius={130}
                         label={renderCustomizedLabel}
                         fill="pink"
                         labelLine={false}
@@ -84,7 +84,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                         data={bipocData}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        outerRadius={130}
                         label={renderCustomizedLabel}
                         fill="pink"
                         labelLine={false}
@@ -105,7 +105,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                         data={lgbtqiaData}
                         cx="50%"
                         cy="50%"
-                        outerRadius={80}
+                        outerRadius={130}
                         label={renderCustomizedLabel}
                         fill="pink"
                         labelLine={false}

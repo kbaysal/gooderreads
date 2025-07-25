@@ -404,3 +404,22 @@ export const createUser = async (userId: string, name: string, email: string): P
         return false;
     }
 }
+
+export const getGoogleBookInfo = async (bookId: string): Promise<SimplifiedBook> => {
+    console.log("getBookInfo")
+    try {
+        const query = `
+        SELECT * FROM bookinfo
+        WHERE id = $1;
+    `;
+        console.log(query);
+        const sql = neon(`${process.env.DATABASE_URL}`);
+        const result = await sql.query(query, [bookId]);
+        console.log("getGoogleBookInfo result", result?.[0]);
+        return result?.[0] as SimplifiedBook;
+    } catch (error) {
+        console.error('Error getting from bookinfo:', error);
+        throw error;
+    }
+}
+

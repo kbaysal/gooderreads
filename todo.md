@@ -16,7 +16,7 @@ Long term:
        - [x] Filter by to read/to review/all
        - [x] Collapsible lists
    - [ ] Use the bookinfo table for populating book info
-       - [ ] Make sure we can fall back to bookinfo if google fails   
+       - [x] Make sure we can fall back to bookinfo if google fails   
    - [x] New views with filters
        - [ ] Finish list creation/editing screen 
    - [x] Move search to its own thing so that it can be on all pages
@@ -26,3 +26,5 @@ Long term:
        - [ ] Make sure they're responsive
    - [ ] Filters
    - [ ] Sort
+   - [ ] Bugs
+      - [ ] Date discrepancy

@@ -5,15 +5,12 @@ interface Book {
     }
     volumeInfo: {
         authors: string[];
-        averageRating: number;
-        categories: string[];
         description: string;
         imageLinks: {
             smallThumbnail: string;
             thumbnail: string;
         };
         pageCount: number;
-        printType: string;
         publishedDate: string;
         publishedDateOverride?: Date;
         publisher: string;
@@ -34,7 +31,7 @@ interface BookError {
 
 interface SimplifiedBook {
     id: Book["id"];
-    authors: string;
+    author: string;
     title: Book["volumeInfo"]["title"];
     thumbnail: Book["volumeInfo"]["imageLinks"]["smallThumbnail"];
     pages: Book["volumeInfo"]["pageCount"];
