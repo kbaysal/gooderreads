@@ -31,12 +31,9 @@ export const useBooks = (bookIds: string[]) => {
         queries: bookIds?.map(queryForUseBooks) || []
     });
 
-    console.log("useBooks queries", queries.map(query => query.data));
-    console.log(queries)
-
     const isLoading = queries.some(query => query.isLoading);
     const isError = queries.some(query => query.isError);
-    const data = queries.map(query => query.data).filter((book) => {console.log("book", book?.id, book); return !!(book as Book)?.id});
+    const data = queries.map(query => query.data).filter((book) => !!(book as Book)?.id);
 
     return { data, isError, isLoading };
 }

@@ -1,7 +1,13 @@
 import dayjs from 'dayjs';
-import { Bar, BarChart, Cell, Pie, PieChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BookData } from '../lib/data';
-import { PieLabelProps } from 'recharts/types/polar/Pie';
+import { Dosis } from 'next/font/google'
+import { useCallback, useState } from 'react';
+import { BarRectangleItem } from 'recharts/types/cartesian/Bar';
+
+const dosis = Dosis({
+    subsets: ["latin"],
+});
 
 const diverseColors = ['#eb2f96', 'lightgray'];
 const bipocColors = ['#13c2c2', 'lightgray'];
@@ -42,96 +48,134 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
         { name: 'LGBTQIA', value: lgbtqia },
         { name: 'Not LGBTQIA', value: notLgbtqia }
     ];
+    const [hoveredIndex, setHoveredIndex] = useState(-1);
+    const handleMouseEnter = useCallback(
+        (data: BarRectangleItem, index: number) => {
+            setHoveredIndex(index);
+        },
+        []
+    );
+
+    const handleMouseLeave = useCallback(
+        () => {
+            setHoveredIndex(-1);
+        },
+        []
+    );
+
+    console.log("monthData", monthData);
+    console.log("diverseData", diverseData);
+    console.log("bipocData", bipocData);
+    console.log("lgbtqiaData", lgbtqiaData);
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 48, marginTop: 24, flexWrap: 'wrap' }}>
             <div>
-                <h4 style={{ marginBottom: 36, textAlign: "center" }}>Books by Release Month</h4>
-                <BarChart width={300} height={300} data={monthData}>
+                <h4 style={{ marginBottom: 36, textAlign: "center" }}>Books by Month Read</h4>
+                <BarChart
+                    width={408}
+                    height={300}
+                    data={monthData}
+                >
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" />
+                    <Tooltip cursor={{ fill: 'transparent' }} formatter={(value) => [value, 'Books']} />
+                    <Bar
+                        dataKey="value"
+                        fill="#8884d8"
+                        radius={[20, 20, 0, 0]}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                    >
+                        {monthData.map((entry, index) => (
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={hoveredIndex === index ? '#5551a1ff' : '#8884d8'} // Red on hover, blue default
+                            />
+                        ))}
+                    </Bar>
                 </BarChart>
             </div>
-            <div>
-                <h4 style={{ marginBottom: 36, textAlign: "center" }}>Diverse</h4>
-                <PieChart width={300} height={300}>
-                    <Pie
-                        dataKey="value"
-                        isAnimationActive={false}
-                        data={diverseData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={130}
-                        label={renderCustomizedLabel}
-                        fill="pink"
-                        labelLine={false}
-                    >
-                        {diverseData.map((entry, index) => (
-                            <Cell key={`cell-${entry.name}`} fill={diverseColors[index]}/>
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                </PieChart>
-            </div>
-            <div>
-                <h4 style={{ marginBottom: 36, textAlign: "center" }}>BIPOC</h4>
-                <PieChart width={300} height={300}>
-                    <Pie
-                        dataKey="value"
-                        isAnimationActive={false}
-                        data={bipocData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={130}
-                        label={renderCustomizedLabel}
-                        fill="pink"
-                        labelLine={false}
-                    >
-                        {lgbtqiaData.map((entry, index) => (
-                            <Cell key={`cell-${entry.name}`} fill={bipocColors[index]}/>
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                </PieChart>
-            </div>
-            <div>
-                <h4 style={{ marginBottom: 36, textAlign: "center" }}>LGBTQIA</h4>
-                <PieChart width={300} height={300}>
-                    <Pie
-                        dataKey="value"
-                        isAnimationActive={false}
-                        data={lgbtqiaData}
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={130}
-                        label={renderCustomizedLabel}
-                        fill="pink"
-                        labelLine={false}
-                    >
-                        {diverseData.map((entry, index) => (
-                            <Cell key={`cell-${entry.name}`} fill={lgbtqiaColors[index]}/>
-                        ))}
-                    </Pie>
-                    <Tooltip />
-                </PieChart>
-            </div>
+            <BinaryPie
+                data={diverseData}
+                colors={diverseColors}
+                mainCount={diverse}
+                total={props.bookData.length}
+                title='Diverse Books'
+            />
+            <BinaryPie
+                data={bipocData}
+                colors={bipocColors}
+                mainCount={bipoc}
+                total={props.bookData.length}
+                title='BIPOC Books'
+            />
+            <BinaryPie
+                data={lgbtqiaData}
+                colors={lgbtqiaColors}
+                mainCount={lgbtqia}
+                total={props.bookData.length}
+                title='LGBTQIA+ Books'
+            />
         </div>
     );
 };
 
 export default ShelfGraphs;
 
-const RADIAN = Math.PI / 180;
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: PieLabelProps) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-(midAngle ?? 0) * RADIAN);
-    const y = cy + radius * Math.sin(-(midAngle ?? 0) * RADIAN);
-
-    return (
-        <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-            {`${((percent ?? 1) * 100).toFixed(0)}%`}
-        </text>
-    );
-};
+const BinaryPie = (props: { data: { name: string, value: number }[], colors: string[], mainCount: number, total: number, title: string }) => (
+    <div style={{ position: 'relative' }}>
+        <h4 style={{ marginBottom: 36, textAlign: "center" }}>{props.title}</h4>
+        <div style={{ position: "relative" }}>
+            <ResponsiveContainer width={180} height={180}>
+                <PieChart>
+                    <Pie
+                        dataKey="value"
+                        isAnimationActive={false}
+                        data={props.data}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={90}
+                        innerRadius={55}
+                        labelLine={false}
+                        cornerRadius={100}
+                        paddingAngle={3}
+                        fill="#8884d8"
+                    >
+                        {props.data.map((entry, index) => (
+                            <Cell key={`cell-${entry.name}`} fill={props.colors[index]} />
+                        ))}
+                    </Pie>
+                    <Tooltip
+                        contentStyle={{
+                            backgroundColor: "white",
+                            color: props.colors[0],
+                            border: "1px solid #ccc",
+                            borderRadius: "4px"
+                        }}
+                        formatter={(value, name) => [value, name]}
+                    />
+                </PieChart>
+            </ResponsiveContainer>
+            <div
+                className={dosis.className}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    fontSize: '30px',
+                    fontWeight: 500,
+                    fontFamily: '"Dosis", sans-serif'
+                }}
+            >
+                {Math.round(props.mainCount / props.total * 100)}%
+            </div>
+        </div>
+    </div>
+);

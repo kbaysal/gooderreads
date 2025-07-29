@@ -87,9 +87,10 @@ const Nav = memo((props: { shelf: Shelf, color: string, className: string, icon:
     );
 
     const onClick = useCallback(() => !activePath && router.push(href), [router, href, activePath]);
+
     return (
-        <Tooltip title={activePath ? "" : `Go to ${props.shelf}`} >
-            <ConfigProvider wave={{ disabled: true }}>
+        <ConfigProvider wave={{ disabled: true }}>
+            <Tooltip title={activePath ? "" : `Go to ${props.shelf}`} >
                 <Button
                     type="text"
                     style={{
@@ -103,8 +104,8 @@ const Nav = memo((props: { shelf: Shelf, color: string, className: string, icon:
                 >
                     <props.icon size={32} color={activePath ? "white" : props.color} />
                 </Button>
-            </ConfigProvider>
-        </Tooltip>
+            </Tooltip>
+        </ConfigProvider>
     );
 });
 

@@ -141,11 +141,11 @@ export default function Home() {
             }
           )).then(
             (books) => {
-              if (!(books?.[0] as BookError).error) {
+              // if (!(books?.[0] as BookError).error) {
                 const newTodoBooks = [...todoBooks];
                 newTodoBooks[todo] = books as Book[];
                 setTodoBooks(newTodoBooks);
-              }
+              // }
             }
           )
         }
@@ -173,7 +173,7 @@ export default function Home() {
 
 const TodoSection = memo(function todosection(props: { todolist: Book[] | undefined, todoFirstState: Map<string, BookData> | undefined }) {
   const { todolist, todoFirstState } = props;
-  console.log("TODOSECTUON", todolist)
+  console.log("TODOSECTION", todolist)
   return <div className={styles.bookResults}>
     {!todolist && <Spin indicator={<LoadingOutlined spin />} size="large" className={styles.pageLoading} />}
     {todolist?.map(

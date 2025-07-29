@@ -300,6 +300,11 @@
   justify-content: flex-end;
 }
 
+.filterBar {
+  display: flex;
+  gap: 16px;
+}
+
 .collapse:not(:last-child) {
   margin-bottom: 24px;
 }
@@ -315,8 +320,6 @@
 .collapse:nth-child(2) :global(.ant-collapse-content) {
   border-color: #5576eb;
 }
-
-/*6058e2*/
 
 .collapse:last-child,
 .collapse:last-child > *:first-child,

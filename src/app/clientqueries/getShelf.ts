@@ -44,13 +44,20 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                 }
                 const enddate = typeof book.enddate !== "string" ? dayjs(book.enddate).format(dateFormat) : book.enddate;
                 const filterDateString = filter.enddate.data === "Today" ? dayjs().format(dateFormat) : filter.enddate.data;
-                if (filter.enddate.operator === ">" ?
-                    enddate <= filterDateString :
-                    filter.enddate?.operator === "<" ?
-                        enddate >= filterDateString :
-                        enddate !== filterDateString
+                console.log("enddate", enddate, "filterDateString", filterDateString, "operator", filter.enddate.operator);
+                if ((filter.enddate.operator === ">" && enddate <= filterDateString) ||
+                    (filter.enddate?.operator === "<" && enddate >= filterDateString)
                 ) {
+                    console.log("enddate mismatch", enddate, filterDateString);
                     return false;
+                } if (filter.enddate.operator === "><") {
+                    const [start, end] = filter.enddate.data as [string, string];
+                    const filterStartString = typeof start !== "string" ? dayjs(start).format(dateFormat) : start;
+                    const filterEndString = typeof end !== "string" ? dayjs(end).format(dateFormat) : end;
+                    console.log("startdate", filterStartString, "enddate", filterEndString, "book.enddate", enddate);
+                    if (enddate < filterStartString || enddate > filterEndString) {
+                        return false;
+                    }
                 }
             }
             if (
@@ -67,6 +74,11 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                         book.releasedate !== filterDateString
                 ) {
                     return false;
+                } if (filter.releasedate.operator === "><") {
+                    const [start, end] = filter.releasedate.data as [string, string];
+                    if (book.releasedate < start || book.releasedate > end) {
+                        return false;
+                    }
                 }
             }
             if (
@@ -115,11 +127,17 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                 const valueB = b[key];
 
                 if (typeof valueA === 'number' && typeof valueB === 'number') {
-                    return valueA - valueB;
+                    if (filter.sort?.operator === "asc") {
+                        return valueA - valueB;
+                    }
+                    return valueB - valueA;
                 }
 
                 if (typeof valueA === 'string' && typeof valueB === 'string') {
-                    return valueA.localeCompare(valueB);
+                    if (filter.sort?.operator === "asc") {
+                        return valueA.localeCompare(valueB);
+                    }
+                    return valueB.localeCompare(valueA);
                 }
 
                 if (typeof valueA === "object" && typeof valueB === "object") {

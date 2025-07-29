@@ -3,9 +3,9 @@
 import { LoadingOutlined } from '@ant-design/icons';
 import { IconEdit, IconLayoutGrid, IconListDetails, IconTrash, IconChartPie2 } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Segmented, Spin } from "antd";
+import { Button, Segmented, Select, Spin } from "antd";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 import { getShelf } from '../clientqueries/getShelf';
 import { useBooks } from '../hooks/useBooks';
@@ -25,10 +25,50 @@ enum ShowAs {
 
 export default function ShelfView(props: { filter: BookFilter, title: string, listId?: number }) {
     const router = useRouter();
-    const [showAs, setShowAs] = useState(ShowAs.list);
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const [showAs, setShowAs] = useState(() => {
+        const showAsParam = searchParams?.get("view");
+        if (showAsParam) {
+            return ShowAs[showAsParam as keyof typeof ShowAs] || ShowAs.list;
+        }
+        return ShowAs.list
+    });
     const { data } = useGetBooks();
+    const [filter, setFilter] = useState<BookFilter>(() => {
+        console.log("searchParams", searchParams);
+        console.log("props.filter", props.filter);
+        const initialFilter = { ...props.filter };
+        if (searchParams) {
+            const year = searchParams.get("enddate");
+            const sort = searchParams.get("sort");
+            if (year) {
+                console.log("year", year);
+                console.log({
+                    enddate: {
+                        operator: "><",
+                        data: [`${year}-01-01`, `${year}-12-31`]
+                    }
+                })
+                initialFilter.enddate = {
+                    operator: "><",
+                    data: [`${year}-01-01`, `${year}-12-31`]
+                };
+            }
+            if(sort) {
+                const [data, operator] = sort.split("-");
+                if (data && operator) {
+                    initialFilter.sort = {
+                        operator: operator as "asc" | "desc",
+                        data: data as keyof BookData
+                    };
+                }
+            }
+        }
+        return initialFilter;
+    });
 
-    const filteredBooks = useMemo(() => data ? getShelf(data, props.filter) : undefined, [data, props.filter]);
+    const filteredBooks = useMemo(() => data ? getShelf(data, filter) : undefined, [data, filter]);
     const { data: books } = useBooks(filteredBooks?.map((book) => book.bookid) || []);
     const queryClient = useQueryClient();
     const mutation = useMutation({
@@ -45,17 +85,76 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
             mutation.mutate(props.listId as number);
         },
         [mutation, props.listId]
-    )
+    );
 
     const listStyleChange = useCallback(
         (value: string) => {
+            const params = new URLSearchParams(searchParams?.toString());
+            params.set("view", value);
+            router.replace(`${pathname}?${params.toString()}`, { scroll: true });
             setShowAs(ShowAs[value as keyof typeof ShowAs]);
         },
-        []
-    )
+        [pathname, searchParams, router]
+    );
 
-    console.log("books", books);
-    console.log("filteredBooks", filteredBooks);
+    const setSort = useCallback(
+        (sort: string) => {
+            const [data, operator] = sort?.split("-");
+
+            const params = new URLSearchParams(searchParams?.toString());
+            if (data && operator) {
+                params.set("sort", sort);
+            } else {
+                params.delete("sort");
+            }
+            router.replace(`${pathname}?${params.toString()}`, { scroll: true });
+
+            setFilter((prev) => ({
+                ...prev,
+                sort: sort && operator ? {
+                    operator: operator as "asc" | "desc",
+                    data: data as keyof BookData
+                } : undefined
+            }));
+        },
+        [searchParams, pathname, router]
+    );
+
+    const setYear = useCallback(
+        (year: string) => {
+            const params = new URLSearchParams(searchParams?.toString());
+
+            if (year) {
+                params.set("enddate", year);
+            } else {
+                params.delete("enddate");
+            }
+
+            router.replace(`${pathname}?${params.toString()}`, { scroll: true });
+            setFilter((prev) => ({
+                ...prev,
+                enddate: {
+                    operator: "><",
+                    data: [`${year}-01-01`, `${year}-12-31`]
+                }
+            }));
+        },
+        [searchParams, pathname, router]
+    );
+
+    const endYearDropdown = useMemo(() => {
+        const years = new Set<string>();
+        data?.forEach((book) => {
+            if (book.enddate) {
+                const enddate = new Date(book.enddate).getFullYear();
+                years.add(enddate.toString());
+            }
+        });
+        return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)).map((year) => ({ value: year, label: year }));
+    },
+        [data]
+    );
+
 
     if (filteredBooks?.length !== books?.length) {
         return null;
@@ -72,6 +171,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                     options={ListStyleOptions}
                     onChange={listStyleChange}
                     className={styles.listToggle}
+                    value={showAs}
                 />
                 {props.listId &&
                     <div className={styles.listEditButtons}>
@@ -80,13 +180,26 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                     </div>
                 }
             </h3>
+            <div className={styles.filterBar}>
+                <Select
+                    placeholder="Sort"
+                    onChange={setSort}
+                    options={sortOptions}
+                    value={filter.sort ? `${filter.sort?.data}-${filter.sort?.operator}` : undefined}
+                />
+                <Select
+                    placeholder="Year finished"
+                    onChange={setYear}
+                    options={endYearDropdown}
+                    value={filter.enddate?.data?.[0]?.split("-")[0] || undefined}
+                />
+            </div>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
             {filteredBooks?.length === 0 && <div>No books were found matching this list</div>}
             {books && showAs !== ShowAs.graph &&
                 <div className={`${styles.bookResults} ${showAs === ShowAs.list ? "" : styles.bookResultsGrid}`}>
                     {books.map(
                         (book, index) => {
-                            console.log("book", book);
                             return (
                                 <BookRow
                                     book={book as Book}
@@ -111,4 +224,13 @@ const ListStyleOptions = [
     { value: ShowAs.list, icon: <IconListDetails /> },
     { value: ShowAs.grid, icon: <IconLayoutGrid /> },
     { value: ShowAs.graph, icon: <IconChartPie2 /> }
+];
+
+const sortOptions = [
+    // { value: { operator: "asc", data: "title" }, label: "Title A-Z" },
+    // { value: { operator: "desc", data: "title" }, label: "Title Z-A" },
+    { value: "enddate-asc", label: "Earliest finished" },
+    { value: "enddate-desc", label: "Latest finished" },
+    { value: "releasedate-asc", label: "Earliest release" },
+    { value: "releasedate-desc", label: "Latest release" }
 ];
