@@ -21,7 +21,7 @@ export default function MainLayout({
 
     return (
         <>
-            {path === "/" || path in paths ?
+            {path === "/" || path && path in paths ?
                 <>
                     <SignedIn>
                         <ConfigProvider theme={{ components: { Rate: { starColor: "#f45f67" } } }} wave={{ disabled: true }}>

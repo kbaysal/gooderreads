@@ -4,7 +4,7 @@ import { ListInfo } from "@/app/lib/data";
 import { getLists } from "@/app/lib/lists";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { use, useMemo } from "react";
+import { Suspense, use, useMemo } from "react";
 import ShelfView from "../../components/ShelfView";
 import { wanttobuyPath, wanttobuyTitle } from "../../lib/helper";
 
@@ -34,6 +34,10 @@ export default function List(props: { params: Promise<{ id: string }> }) {
     );
 
     return (
-        id && list && <ShelfView title={list.name} filter={list.filters} listId={id === wanttobuyPath ? undefined : parseInt(id)} />
+        id && list && (
+            <Suspense>
+                <ShelfView title={list.name} filter={list.filters} listId={id === wanttobuyPath ? undefined : parseInt(id)} />
+            </Suspense>
+        )
     )
 }
