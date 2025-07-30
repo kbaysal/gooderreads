@@ -122,8 +122,8 @@ export default function CreateList(props: EditListProps | Record<string, never> 
         [filter]
     )
 
-    const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => setFilter({ ...filter, owned: e.target.checked }), [filter]);
-    const wantToBuyClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => setFilter({ ...filter, wanttobuy: e.target.checked }), [filter]);
+    const isOwnedClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => setFilter({ ...filter, owned: {operator: e.target.checked ? "=" :  "<>"} }), [filter]);
+    const wantToBuyClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => setFilter({ ...filter, wanttobuy: {operator: e.target.checked ? "=" :  "<>"} }), [filter]);
     const acquiredClick: GetProp<typeof Checkbox, 'onChange'> = useCallback((e) => {
         setFilter({ ...filter, boughtyear: e.target.checked ? (filter.boughtyear || {}) : undefined });
     }, [filter]);

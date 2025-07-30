@@ -11,7 +11,7 @@ import { wanttobuyPath, wanttobuyTitle } from "../../lib/helper";
 const wanttobuyListInfo: Omit<ListInfo, "userid"> = {
     id: wanttobuyPath,
     name: wanttobuyTitle,
-    filters: { wanttobuy: true }
+    filters: { wanttobuy: {"operator": "="} }
 }
 
 export default function List(props: { params: Promise<{ id: string }> }) {
