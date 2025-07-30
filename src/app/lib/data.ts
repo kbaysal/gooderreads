@@ -54,13 +54,15 @@ type EndDate = Record<"enddate", FilterWithOperator<string, "=" | ">" | "<" | ">
 type Sort = Record<"sort", FilterWithOperator<keyof BookData, "asc" | "desc">>;
 type ShelfFilter = Record<"shelf", Shelf[]>;
 type FormatsFilter = Record<"formats", Format[]>;
-type LabelFilter = Record<"labels" | "sources" | "arc" | "diversity", string[]>
+type LabelFilter = Record<"labels" | "sources" | "arc" | "diversity", string[]>;
+export type BooleanFilter = Record<"arcoptional" | "arcreviewed" | "diverse" | "bipoc" | "lgbt" | "owned" | "wanttobuy", FilterWithOperator<never, "=" | "<>">>;
+
 export type FilterWithOperator<T, O extends string = "<" | ">" | "=" | "asc" | "desc" | "><"> =
     O extends "><"
         ? { operator: "><"; data: T[] }
         : { operator?: "<" | ">" | "=" | "asc" | "desc"; data?: T };
 
-export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & EndDate & ReleaseYear & Sort & ShelfFilter & LabelFilter & FormatsFilter>;
+export type BookFilter = Partial<Record<BookDataColumn, FilterWithOperator<unknown> | unknown> & BoughtYear & EndDate & ReleaseYear & Sort & ShelfFilter & LabelFilter & FormatsFilter & BooleanFilter>;
 export interface ListInfo {
     id: number | string;
     userid: string;

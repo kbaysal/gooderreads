@@ -1,7 +1,7 @@
 "use client"
 
 import { LoadingOutlined } from '@ant-design/icons';
-import { IconEdit, IconLayoutGrid, IconListDetails, IconTrash, IconChartPie2 } from '@tabler/icons-react';
+import { IconChartPie2, IconEdit, IconLayoutGrid, IconListDetails, IconTrash } from '@tabler/icons-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Segmented, Select, Spin } from "antd";
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { getShelf } from '../clientqueries/getShelf';
 import { useBooks } from '../hooks/useBooks';
 import { useGetBooks } from '../hooks/useGetBooks';
-import { BookData, BookFilter, ListInfo } from "../lib/data";
+import { BookData, BookFilter, BooleanFilter, ListInfo } from "../lib/data";
 import { deleteList } from '../lib/lists';
 import styles from "../page.module.css";
 import { BookRow } from "./BookRow";
@@ -36,26 +36,17 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
     });
     const { data } = useGetBooks();
     const [filter, setFilter] = useState<BookFilter>(() => {
-        console.log("searchParams", searchParams);
-        console.log("props.filter", props.filter);
         const initialFilter = { ...props.filter };
         if (searchParams) {
             const year = searchParams.get("enddate");
             const sort = searchParams.get("sort");
             if (year) {
-                console.log("year", year);
-                console.log({
-                    enddate: {
-                        operator: "><",
-                        data: [`${year}-01-01`, `${year}-12-31`]
-                    }
-                })
                 initialFilter.enddate = {
                     operator: "><",
                     data: [`${year}-01-01`, `${year}-12-31`]
                 };
             }
-            if(sort) {
+            if (sort) {
                 const [data, operator] = sort.split("-");
                 if (data && operator) {
                     initialFilter.sort = {
@@ -63,6 +54,24 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                         data: data as keyof BookData
                     };
                 }
+            }
+            if (searchParams.has("include")) {
+                const include = searchParams.get("include")?.split(",") || [];
+                booleanOptions.forEach((option) => {
+                    if (option.value === "arc") {
+                        if (include.includes(option.value)) {
+                            if (initialFilter.sources) {
+                                initialFilter.sources.push("arc");
+                            } else {
+                                initialFilter.sources = ["arc"];
+                            }
+                        }
+                        return;
+                    }
+                    if (include.includes(option.value)) {
+                        initialFilter[option.value] = { operator: "=" };
+                    }
+                });
             }
         }
         return initialFilter;
@@ -142,6 +151,49 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
         [searchParams, pathname, router]
     );
 
+    const setInclude = useCallback(
+        (include: string[]) => {
+            const params = new URLSearchParams(searchParams?.toString());
+            if (include) {
+                params.set("include", include.join(","));
+            } else {
+                params.delete("include");
+            }
+            router.replace(`${pathname}?${params.toString()}`, { scroll: true });
+            setFilter((prev) => {
+                const newFilter: BookFilter = { ...prev };
+                booleanOptions.forEach((option) => {
+                    if (option.value === "arc") {
+                        if (include.includes(option.value)) {
+                            if (newFilter.sources && !newFilter.sources.includes("arc")) {
+                                newFilter.sources.push("arc");
+                            } else if(!newFilter.sources) {
+                                newFilter.sources = ["arc"];
+                            }
+                        } else {
+                            if (newFilter.sources) {
+                                newFilter.sources = newFilter.sources.filter((source) => source !== "arc");
+                            } if(!newFilter.sources || newFilter.sources.length === 0) {
+                                delete newFilter.sources;
+                            }
+                        }
+                        return;
+                    }
+                    if (include.includes(option.value)) {
+                        newFilter[option.value] = { operator: "=" };
+                    } else {
+                        if (newFilter[option.value]) {
+                            delete newFilter[option.value];
+                        }
+                    }
+                });
+
+                return newFilter;
+            });
+        },
+        [searchParams, pathname, router]
+    );
+
     const endYearDropdown = useMemo(() => {
         const years = new Set<string>();
         data?.forEach((book) => {
@@ -154,6 +206,17 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
     },
         [data]
     );
+
+    const selectedBooleanOptions = useMemo(() => {
+        const selected: string[] = [];
+        if (filter.diverse) selected.push("diverse");
+        if (filter.bipoc) selected.push("bipoc");
+        if (filter.lgbt) selected.push("lgbt");
+        if (Array.isArray(filter.sources) && filter.sources.indexOf("arc") > -1) selected.push("arc");
+        if (filter.owned) selected.push("owned");
+        if (filter.wanttobuy) selected.push("wanttobuy");
+        return selected;
+    }, [filter]);
 
 
     if (filteredBooks?.length !== books?.length) {
@@ -192,6 +255,14 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                     onChange={setYear}
                     options={endYearDropdown}
                     value={filter.enddate?.data?.[0]?.split("-")[0] || undefined}
+                />
+                <Select
+                    placeholder="Include these"
+                    onChange={setInclude}
+                    options={booleanOptions}
+                    value={selectedBooleanOptions}
+                    mode="multiple"
+                    allowClear
                 />
             </div>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
@@ -233,4 +304,13 @@ const sortOptions = [
     { value: "enddate-desc", label: "Latest finished" },
     { value: "releasedate-asc", label: "Earliest release" },
     { value: "releasedate-desc", label: "Latest release" }
+];
+
+const booleanOptions: { value: keyof BooleanFilter | "arc", label: string }[] = [
+    { value: "diverse", label: "Diverse" },
+    { value: "bipoc", label: "BIPOC" },
+    { value: "lgbt", label: "LGBTQIA" },
+    { value: "arc", label: "ARC" },
+    { value: "owned", label: "Owned" },
+    { value: "wanttobuy", label: "Want to buy" }
 ];

@@ -44,17 +44,14 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                 }
                 const enddate = typeof book.enddate !== "string" ? dayjs(book.enddate).format(dateFormat) : book.enddate;
                 const filterDateString = filter.enddate.data === "Today" ? dayjs().format(dateFormat) : filter.enddate.data;
-                console.log("enddate", enddate, "filterDateString", filterDateString, "operator", filter.enddate.operator);
                 if ((filter.enddate.operator === ">" && enddate <= filterDateString) ||
                     (filter.enddate?.operator === "<" && enddate >= filterDateString)
                 ) {
-                    console.log("enddate mismatch", enddate, filterDateString);
                     return false;
                 } if (filter.enddate.operator === "><") {
                     const [start, end] = filter.enddate.data as [string, string];
                     const filterStartString = typeof start !== "string" ? dayjs(start).format(dateFormat) : start;
                     const filterEndString = typeof end !== "string" ? dayjs(end).format(dateFormat) : end;
-                    console.log("startdate", filterStartString, "enddate", filterEndString, "book.enddate", enddate);
                     if (enddate < filterStartString || enddate > filterEndString) {
                         return false;
                     }
@@ -94,12 +91,12 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                 return false;
             }
             if (filter.formats && (!book.formats || hasNoneOf(filter.formats, book.formats))) {
-                console.log("formats mismatch", book.formats, filter.formats);
                 return false;
             }
             if (filter.labels && (!book.labels || hasNoneOf(filter.labels, book.labels))) {
                 return false;
             }
+            console.log("filter.sources", filter.sources, book.sources); // IGNORE
             if (filter.sources && (!book.sources || hasNoneOf(filter.sources, book.sources))) {
                 return false;
             }
@@ -109,18 +106,28 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
             if (filter.diversity && (!book.diversity || hasNoneOf(filter.diversity, book.diversity))) {
                 return false;
             }
+            if(filter.diverse && filter.diverse.operator === "=" && !book.diverse) {
+                return false;
+            }
+            if(filter.bipoc && filter.bipoc.operator === "=" && !book.bipoc) {
+                return false;
+            }
+            if(filter.lgbt && filter.lgbt.operator === "=" && !book.lgbt) {
+                return false;
+            }
+            if(filter.owned && filter.owned.operator === "=" && !book.owned) {
+                return false;
+            }
+            if(filter.wanttobuy && filter.wanttobuy.operator === "=" && !book.wanttobuy) {
+                return false;
+            }
 
             return true;
         }
     );
 
-    console.log("getting shelf, filter");
-    console.log(filter);
-
     if (filter.sort?.data && filteredBooks.length > 1) {
-        console.log("sorting");
-        console.log(filter.sort?.data, filteredBooks[0][(filter.sort?.data) as keyof BookData], filteredBooks[1][(filter.sort?.data) as keyof BookData]);
-        filteredBooks.sort(
+       filteredBooks.sort(
             (a, b) => {
                 const key = filter.sort?.data as keyof BookData;
                 const valueA = a[key];
@@ -144,7 +151,6 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                     // These should be date objects
                     const dateA = dayjs(valueA as unknown as Date);
                     const dateB = dayjs(valueB as unknown as Date);
-                    console.log("dateA", dateA, "dateB", dateB, "sorting", filter.sort?.operator);
                     return (
                         dateA.isBefore(dateB) ?
                             (filter.sort?.operator === "asc" ? -1 : 1) :

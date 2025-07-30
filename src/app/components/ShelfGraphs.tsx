@@ -63,11 +63,6 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
         []
     );
 
-    console.log("monthData", monthData);
-    console.log("diverseData", diverseData);
-    console.log("bipocData", bipocData);
-    console.log("lgbtqiaData", lgbtqiaData);
-
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 48, marginTop: 24, flexWrap: 'wrap' }}>
             <div>
