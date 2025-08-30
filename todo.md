@@ -26,5 +26,22 @@ Long term:
        - [ ] Make sure they're responsive
    - [ ] Filters
    - [ ] Sort
+   - [ ] Tag page 
+       - [ ] Mobile:
+            - [ ] Owned year doesn't fit
+            - [ ] Fix status icons widths
+            - [ ] Don't scroll BG when scrolling selection
+   - [ ] List page
+       - [ ] mobile:
+           - [ ] less space between rows
+           - [ ] Less space between image and text
+           - [ ] Show formats rather than finished icon
+           - [ ] Don't show page number if 0
+           - [ ] Have the select box start with lower case
+           - [ ] Fix sort when changing the finished date
+           - [ ] Update date properly in cache when the state of a book changes
+           - [ ] Fix the info icon alignment
+           - [ ] Make image larger
+           - [ ] Why don't some images load
    - [ ] Bugs
       - [ ] Date discrepancy
