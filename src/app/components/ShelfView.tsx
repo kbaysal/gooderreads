@@ -16,6 +16,7 @@ import styles from "../page.module.css";
 import { BookRow } from "./BookRow";
 import Header from "./Header";
 import ShelfGraphs from './ShelfGraphs';
+import { Shelf } from '../lib/helper';
 
 enum ShowAs {
     list = "list",
@@ -202,7 +203,9 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                 years.add(enddate.toString());
             }
         });
-        return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)).map((year) => ({ value: year, label: year }));
+        const array = Array.from(years).sort((a, b) => parseInt(b) - parseInt(a)).map((year) => ({ value: year, label: year }));
+        array.unshift({ value: "", label: "All time" });
+        return array;
     },
         [data]
     );
@@ -248,13 +251,15 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                     placeholder="Sort"
                     onChange={setSort}
                     options={sortOptions}
-                    value={filter.sort ? `${filter.sort?.data}-${filter.sort?.operator}` : undefined}
+                    value={filter.sort ? `${filter.sort?.data}-${filter.sort?.operator}` : props.filter.shelf?.length === 1 ? defaultSort[props.filter.shelf[0]] : undefined}
+                    style={{ width: 200 }}
                 />
                 <Select
                     placeholder="Year finished"
                     onChange={setYear}
                     options={endYearDropdown}
-                    value={filter.enddate?.data?.[0]?.split("-")[0] || undefined}
+                    value={filter.enddate?.data?.[0]?.split("-")[0] || ""}
+                    style={{ width: 200 }}
                 />
                 <Select
                     placeholder="Include these"
@@ -263,6 +268,7 @@ export default function ShelfView(props: { filter: BookFilter, title: string, li
                     value={selectedBooleanOptions}
                     mode="multiple"
                     allowClear
+                    style={{ width: 200 }}
                 />
             </div>
             {!books && <Spin indicator={<LoadingOutlined spin />} size="large" className="pageLoading" />}
@@ -303,7 +309,9 @@ const sortOptions = [
     { value: "enddate-asc", label: "Earliest finished" },
     { value: "enddate-desc", label: "Latest finished" },
     { value: "releasedate-asc", label: "Earliest release" },
-    { value: "releasedate-desc", label: "Latest release" }
+    { value: "releasedate-desc", label: "Latest release" },
+    { value: "startdate-asc", label: "Earliest started" },
+    { value: "startdate-desc", label: "Latest started" }
 ];
 
 const booleanOptions: { value: keyof BooleanFilter | "arc", label: string }[] = [
@@ -314,3 +322,10 @@ const booleanOptions: { value: keyof BooleanFilter | "arc", label: string }[] = 
     { value: "owned", label: "Owned" },
     { value: "wanttobuy", label: "Want to buy" }
 ];
+
+const defaultSort: Record<Shelf, string> = {
+    [Shelf.TBR]: "releasedate-desc",
+    [Shelf.READ]: "enddate-desc",
+    [Shelf.READING]: "startdate-asc",
+    [Shelf.DNF]: "releasedate-desc"
+}

@@ -67,7 +67,7 @@ export const BookRow = (props: BookRowProps) => {
             shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined,
         ),
         onSuccess: (response, shelf) => {
-            console.log("what");
+            console.log("what", shelf === Shelf.READ ? dayjs().format(dateFormat) : undefined);
             queryClient.setQueryData(["allBooks", userId], (old: BookData[]) => {
                 let found = false;
                 console.log("successsss", response, shelf)
