@@ -78,6 +78,7 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                     }
                 }
             }
+            console.log("filter.boughtyear", filter.boughtyear, book.boughtyear); // IGNORE
             if (
                 filter.boughtyear?.data &&
                 (!book.boughtyear || (
@@ -85,7 +86,7 @@ export const getShelf = (books: BookData[], filter: BookFilter) => {
                         book.boughtyear <= filter.boughtyear.data :
                         filter.boughtyear?.operator === "<" ?
                             book.boughtyear >= filter.boughtyear.data :
-                            book.boughtyear !== filter.boughtyear
+                            book.boughtyear !== filter.boughtyear.data
                 ))
             ) {
                 return false;
