@@ -158,7 +158,8 @@ export const BookRow = (props: BookRowProps) => {
             <div className={styles.displayForGrid}>
                 {/* eslint-disable-next-line @next/next/no-img-element*/}
                 <img
-                    className={styles.bookImg} src={bookInfo?.imageLinks?.smallThumbnail ?? bookInfo?.imageLinks?.thumbnail ?? null}
+                    className={styles.bookImg} 
+                    src={bookInfo?.imageLinks?.smallThumbnail ?? bookInfo?.imageLinks?.thumbnail ?? props.bookData?.thumbnail ?? '/placeholder-book.svg'}
                     alt={`Thumbnail for ${bookInfo.title} by ${bookInfo.authors?.join(", ")}`}
                     onClick={props.grid ? tagClick : undefined}
                 />

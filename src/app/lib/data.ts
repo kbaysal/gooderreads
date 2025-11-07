@@ -45,6 +45,7 @@ export interface BookData extends LabelFields {
     boughtyear?: number | null;
     releasedateG?: string;
     releasedate?: string;
+    thumbnail?: string;
 }
 
 type BookDataColumn = keyof BookData | "shelf" | "sort";

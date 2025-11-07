@@ -1,0 +1,10 @@
+<svg width="100" height="150" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="150" fill="#f0f0f0"/>
+  <rect x="10" y="10" width="80" height="130" fill="#e0e0e0" stroke="#cccccc"/>
+  <text x="50" y="75" font-family="Arial" font-size="12" text-anchor="middle" fill="#666666">
+    No Cover
+  </text>
+  <text x="50" y="90" font-family="Arial" font-size="12" text-anchor="middle" fill="#666666">
+    Available
+  </text>
+</svg>

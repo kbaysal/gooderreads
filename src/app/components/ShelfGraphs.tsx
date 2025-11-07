@@ -19,7 +19,14 @@ const diverseColors = ['#eb2f96', 'lightgray'];
 const bipocColors = ['#13c2c2', 'lightgray'];
 const lgbtqiaColors = ['#722ed1', 'lightgray'];
 const formatColors = ['#eb2f96', '#13c2c2', '#722ed1'];
-const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData: BookData[] }) => {
+
+interface ShelfGraphsProps {
+    books: (Book | BookError | undefined)[];
+    bookData: BookData[];
+    onFilterClick?: (filterType: string, value?: string | boolean | number) => void;
+}
+
+const ShelfGraphs = (props: ShelfGraphsProps) => {
 
     const monthDataMap = new Map<string, number>();
     const formatDataMap = new Map<Format, number>();
@@ -28,9 +35,10 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
     const diverseLabels = new Map<string, number>();
     let maxDiverseLabel = 0;
     props.bookData.map((book) => {
-        const month = book.releasedate ? dayjs(book.enddate).format("MMMM") : undefined;
-        if (month !== undefined) {
-            monthDataMap.set(month, (monthDataMap.get(month.toString()) || 0) + 1);
+        // Use enddate (finished date) as the basis for month filtering/aggregation
+        if (book.enddate) {
+            const month = dayjs(book.enddate).format("MMMM");
+            monthDataMap.set(month, (monthDataMap.get(month) || 0) + 1);
         }
 
         book.formats?.forEach((format) => {
@@ -108,6 +116,12 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 title="Books by Month Read"
                 data={monthData}
                 columns={3}
+                onClick={(monthName) => {
+                    if (!monthName) return;
+                    const monthIndex = dayjs(monthName, 'MMMM').month();
+                    const monthCode = String(monthIndex + 1).padStart(2, '0');
+                    props.onFilterClick?.('month', monthCode);
+                }}
             />
             <BinaryPie
                 data={ownedData}
@@ -115,6 +129,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 mainCount={owned}
                 total={props.bookData.length}
                 title='Owned Books'
+                onClick={() => props.onFilterClick?.('owned', true)}
             />
             <BinaryPie
                 data={reviewedData}
@@ -122,8 +137,9 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 mainCount={reviewed}
                 total={props.bookData.length}
                 title='Reviewed Books'
+                onClick={() => props.onFilterClick?.('arcreviewed', true)}
             />
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', cursor: 'pointer' }}>
                 <h4 style={{ marginBottom: 36, textAlign: "center" }}>Format Breakdown</h4>
                 <PieChart
                     width={columnWidth}
@@ -142,9 +158,18 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                         paddingAngle={0}
                         fill={formatColors[0]}
                         label={renderCustomLabel}
+                        onClick={(data) => {
+                            const formatName = data.name as string;
+                            const formatValue = Format[formatName as keyof typeof Format];
+                            props.onFilterClick?.('formats', formatValue);
+                        }}
                     >
                         {formatData.map((entry, index) => (
-                            <Cell key={`cell-${entry.name}`} fill={formatColors[index]} />
+                            <Cell 
+                                key={`cell-${entry.name}`} 
+                                fill={formatColors[index]}
+                                style={{ cursor: 'pointer' }}
+                            />
                         ))}
                         <Tooltip
                             formatter={(value, name) => [value, name]}
@@ -157,11 +182,13 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 title="Books by Source"
                 data={sourcesData}
                 columns={2}
+                onClick={(source) => props.onFilterClick?.('sources', source)}
             />
             <BarChartView
                 title="Books by ARC Source"
                 data={arcSourcesData}
                 columns={2}
+                onClick={(arcSource) => props.onFilterClick?.('arc', arcSource)}
             />
             <Divider>Diversity</Divider>
             <BinaryPie
@@ -170,6 +197,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 mainCount={diverse}
                 total={props.bookData.length}
                 title='Diverse Books'
+                onClick={() => props.onFilterClick?.('diverse', true)}
             />
             <BinaryPie
                 data={bipocData}
@@ -177,6 +205,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 mainCount={bipoc}
                 total={props.bookData.length}
                 title='BIPOC Books'
+                onClick={() => props.onFilterClick?.('bipoc', true)}
             />
             <BinaryPie
                 data={lgbtqiaData}
@@ -184,11 +213,7 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                 mainCount={lgbtqia}
                 total={props.bookData.length}
                 title='LGBTQIA+ Books'
-            />
-            <BarChartView
-                title="Diversity Labels"
-                data={diverseLabelsData}
-                columns={3}
+                onClick={() => props.onFilterClick?.('lgbt', true)}
             />
             <div style={{ width: columnWidth * 2 + columnGap, gap: 2, display: "grid", gridTemplateColumns: "max-content auto" }}>
                 {diverseLabelsData.map((label) => (
@@ -205,7 +230,9 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
                                     overflow: "hidden",
                                     paddingLeft: 5,
                                     fontWeight: 600,
+                                    cursor: 'pointer',
                                 }}
+                                onClick={() => props.onFilterClick?.('diversity', label.name)}
                             >
                                 {label.value}
                             </div>
@@ -219,7 +246,12 @@ const ShelfGraphs = (props: { books: (Book | BookError | undefined)[], bookData:
 
 export default ShelfGraphs;
 
-const BarChartView = (props: { title: string, data: { name: string, value: number }[], columns: number }) => {
+const BarChartView = (props: { 
+    title: string, 
+    data: { name: string, value: number }[], 
+    columns: number,
+    onClick?: (name: string) => void
+}) => {
 
     const [hoveredIndex, setHoveredIndex] = useState(-1);
     const handleMouseEnter = useCallback(
@@ -235,6 +267,8 @@ const BarChartView = (props: { title: string, data: { name: string, value: numbe
         },
         []
     );
+
+    // Removed chart-level onClick; using per-Cell onClick for precise payload
 
     return (
         <div>
@@ -258,6 +292,8 @@ const BarChartView = (props: { title: string, data: { name: string, value: numbe
                         <Cell
                             key={`cell-${index}`}
                             fill={hoveredIndex === index ? '#5551a1ff' : '#8884d8'}
+                            style={{ cursor: props.onClick ? 'pointer' : 'default' }}
+                            onClick={() => props.onClick && props.onClick(entry.name)}
                         />
                     ))}
                 </Bar>
@@ -266,8 +302,15 @@ const BarChartView = (props: { title: string, data: { name: string, value: numbe
     )
 };
 
-const BinaryPie = (props: { data: { name: string, value: number }[], colors: string[], mainCount: number, total: number, title: string }) => (
-    <div style={{ position: 'relative' }}>
+const BinaryPie = (props: { 
+    data: { name: string, value: number }[], 
+    colors: string[], 
+    mainCount: number, 
+    total: number, 
+    title: string,
+    onClick?: () => void 
+}) => (
+    <div style={{ position: 'relative', cursor: props.onClick ? 'pointer' : 'default' }} onClick={props.onClick}>
         <h4 style={{ marginBottom: 36, textAlign: "center" }}>{props.title}</h4>
         <div style={{ position: "relative" }}>
             <ResponsiveContainer width={columnWidth} height={columnWidth}>

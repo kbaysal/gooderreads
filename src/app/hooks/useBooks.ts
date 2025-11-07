@@ -7,7 +7,6 @@ export const queryForUseBooks = (bookId: string) => ({
         const res = await fetch(`https://www.googleapis.com/books/v1/volumes/${bookId}?key=AIzaSyCZeh3yvOzMvOlIq3BPZFpVggOrMwrYpKA`);
         const json = await res.json();
         if (json.error) {
-            // If error, fallback to getGoogleBookInfo
             const googleBookInfo = await getGoogleBookInfo(bookId)
             return ({
                 id: bookId, 
@@ -18,11 +17,25 @@ export const queryForUseBooks = (bookId: string) => ({
                     authors: googleBookInfo.author?.split(", "),
                     description: "",
                     publishedDate: "",
-                    imageLinks: {thumbnail: googleBookInfo.thumbnail, smallThumbnail: ""}
+                    // Add a fallback image URL
+                    imageLinks: {
+                        thumbnail: googleBookInfo.thumbnail || '/placeholder-book.svg',
+                        smallThumbnail: googleBookInfo.thumbnail || '/placeholder-book.svg'
+                    }
                 }
             } satisfies Book);
         }
-        return json as Book;
+        // Add validation for the successful API response
+        return {
+            ...json,
+            volumeInfo: {
+                ...json.volumeInfo,
+                imageLinks: {
+                    thumbnail: json.volumeInfo?.imageLinks?.thumbnail || '/placeholder-book.svg',
+                    smallThumbnail: json.volumeInfo?.imageLinks?.smallThumbnail || '/placeholder-book.svg'
+                }
+            }
+        } as Book;
     }
 })
 
